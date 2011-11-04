@@ -240,7 +240,7 @@ def find_end_set_uniform( endtype, length, spacefilter, endfilter, endchooser,\
     # TODO: multiple sets generated, decide which is best.
 
 def enhist( endtype, length, adjacents=['n','n'], alphabet='n',\
-            bins=None, energyfuncs=None, plot=False ):
+            bins=None, energyfuncs=None, plot=False, color='b' ):
     if endtype == 'DT':
         template = [lton[adjacents[0]]] +\
                    [lton[alphabet.lower()]] * length + [lton[wc[adjacents[1]]]]
@@ -291,13 +291,13 @@ def enhist( endtype, length, adjacents=['n','n'], alphabet='n',\
 
         plt.bar( bins[:-1], hist, width=(bins[1]-bins[0]),\
                 label="Type {3}, Length {0}, Adjs {1}, Alph {2}".format(\
-                length,adjacents,alphabet,endtype) )
+                length,adjacents,alphabet,endtype),color=color )
         plt.title(\
             "Matching Energies of Ends of Type {3}, Length {0}, Adjs {1}, Alph {2}".format(\
             length,adjacents,alphabet,endtype))
         plt.xlabel("Standard Free Energy (-kcal/mol)")
         plt.ylabel("Number of Ends")
-        plt.show()
+        #plt.show()
 
     return (hist,bins,info) 
 
@@ -350,7 +350,7 @@ def easyends( endtype, endlength, number=0, interaction=None, fdev=0.05,\
         efunc = energyfuncs_santalucia(mismatchtype='max')
     else:
         efunc=energyfuncs
-    if not interaction:
+    if (not interaction) or (interaction == 0):
         interaction = enhist( endtype, endlength, energyfuncs=efunc,\
                 adjacents=adjs, alphabet=alphabet )[2]['emedian']
         logging.warning("Calculated optimal interaction energy is {0}.".format(interaction))
@@ -622,3 +622,16 @@ class energyfuncs_santalucia:
 
 
 tops = lambda s: 4*s[:,:-1]+s[:,1:]
+
+
+if __name__ == '__main__':
+    # OK, we're being run as a script, so let's deal with it.
+
+    # Right now this is very rudimentary
+
+    import sys
+    args = [ eval(x) for x in sys.argv[1:] ]
+
+    E = easyends( *args )
+
+    print repr(E)
