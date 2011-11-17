@@ -280,8 +280,8 @@ def enhist( endtype, length, adjacents=['n','n'], alphabet='n',\
     
     x = (bins[:-1]+bins[1:])/2
     n = hist
-    info['emean'] = np.sum( n*x, dtype='float128' ) / np.sum( n, dtype='int64' )
-    info['estd'] =  np.sqrt( np.sum( n*(x-info['emean'])**2, dtype='float128' )\
+    info['emean'] = np.sum( n*x, dtype='double' ) / np.sum( n, dtype='int64' )
+    info['estd'] =  np.sqrt( np.sum( n*(x-info['emean'])**2, dtype='double' )\
             / np.sum( n, dtype='int64' ) )
     cs = np.cumsum(n)
     info['emedian'] = x[ np.flatnonzero( cs >= cs[-1]/2.0 )[0] ]
