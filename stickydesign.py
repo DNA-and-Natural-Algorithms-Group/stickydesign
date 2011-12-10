@@ -12,6 +12,8 @@ class endarray(np.ndarray):
     into two classes in order to deal with this problem.
     """
     def __new__( cls, array, endtype ):
+        if type(array[0]) is str:
+            array = np.array([[ nt[x] for x in y ] for y in array ])
         obj = np.asarray(array).view(cls)
         obj.endtype = endtype
         return obj
@@ -60,6 +62,7 @@ class endarray(np.ndarray):
     cadjs = property(_get_cadjs)
     strings = property(tolist) 
 
+nt = { 'a': 0, 'c': 1, 'g': 2, 't': 3 }
 lton = { 'a': [0],
          'b': [1, 2, 3],
          'c': [1],
@@ -119,7 +122,6 @@ def values_chunked(items, endtype, chunk_dim=10):
     for seq in outer:
         chunk[:,:p] = seq
         yield chunk
-
 
 def find_end_set_uniform( endtype, length, spacefilter, endfilter, endchooser,\
                           energyfuncs, adjacents=['n','n'], num=0, numtries=1,\
@@ -197,6 +199,8 @@ def find_end_set_uniform( endtype, length, spacefilter, endfilter, endchooser,\
     
     # Use endfilter to filter available sequences taking into account old sequences.
     if len(oldends)>0:
+        if type(oldends[0]) is str:
+            oldends = endarray(oldends,endtype)
         if oldendfilter:
             availends = oldendfilter( oldends, None, availends, energyfuncs )
         else:
@@ -304,7 +308,7 @@ def enhist( endtype, length, adjacents=['n','n'], alphabet='n',\
 
 def easyends( endtype, endlength, number=0, interaction=None, fdev=0.05,\
               maxspurious=0.5, maxendspurious=None, tries=1, oldends=[],\
-              adjs=['n','n'], energyfuncs=None, alphabet='n' ):
+              adjs=['n','n'], energyfuncs=None, alphabet='n', echoose=None ):
     """
     Easyends is an attempt at creating an easy-to-use function for finding sets
     of ends.
@@ -362,11 +366,93 @@ def easyends( endtype, endlength, number=0, interaction=None, fdev=0.05,\
     
     sfilt = spacefilter_standard(interaction, interaction*fdev, maxendspurious)
     efilt = endfilter_standard_advanced(maxcompspurious,maxendspurious)
-    echoose = endchooser_standard(interaction)
+    if not echoose:
+        echoose = endchooser_standard(interaction)
     
     return find_end_set_uniform( endtype, endlength, sfilt, efilt, echoose,\
-           energyfuncs=efunc, numtries=tries, oldends=[],adjacents=adjs,\
+           energyfuncs=efunc, numtries=tries, oldends=oldends,adjacents=adjs,\
            num=number,alphabet=alphabet)
+
+def easy_space( endtype, endlength, interaction=None, fdev=0.05,\
+              maxspurious=0.5, maxendspurious=None, tries=1, oldends=[],\
+              adjs=['n','n'], energyfuncs=None, alphabet='n', echoose=None, runnx=False ):
+    length = endlength
+    if not energyfuncs:
+        efunc = energyfuncs_santalucia(mismatchtype='max')
+        energyfuncs = efunc
+    else:
+        efunc=energyfuncs
+    if (not interaction) or (interaction == 0):
+        interaction = enhist( endtype, endlength, energyfuncs=efunc,\
+                adjacents=adjs, alphabet=alphabet )[2]['emedian']
+        logging.warning("Calculated optimal interaction energy is {0}.".format(interaction))
+    maxcompspurious = maxspurious*interaction
+    if not maxendspurious:
+        maxendspurious = maxspurious*interaction
+    else:
+        maxendspurious = maxendspurious*interaction
+    
+    sfilt = spacefilter_standard(interaction, interaction*fdev, maxendspurious)
+    spacefilter = sfilt
+    efilt = endfilter_standard_advanced(maxcompspurious,maxendspurious)
+    if not echoose:
+        echoose = endchooser_standard(interaction)
+
+    adjacents = adjs
+
+    if endtype == 'DT':
+        template = [lton[adjacents[0]]] + [lton[alphabet.lower()]] * length \
+                   + [lton[wc[adjacents[1]]]]
+    elif endtype == 'TD':
+        template = [lton[wc[adjacents[1]]]] + [lton[alphabet.lower()]] * length \
+                   + [lton[adjacents[0]]]
+
+    # Create the chunk iterator
+    endchunk = values_chunked(template, endtype)
+    
+    # Use spacefilter to filter chunks down to usable sequences
+    matcharrays = []
+    chunknum = 0
+    totchunks = None
+    totends = np.product( [len(x) for x in template] )
+    logging.info( "Have {0} ends in total before any filtering.".format(totends) )
+    for chunk in endchunk:
+        matcharrays.append(spacefilter(chunk,energyfuncs))
+        if not totchunks:
+            totchunks = totends/len(chunk)
+        chunknum += 1
+        logging.debug( "Found {0} filtered ends in chunk {1} of {2}.".format(
+            len(matcharrays[-1]), chunknum, totchunks))
+    logging.info( "Done with spacefiltering." )
+    availends = np.vstack( matcharrays ).view(endarray)
+    availends.endtype = endtype
+    
+    availendsr = np.repeat(availends,len(availends), axis=0)
+    availendst = np.tile(availends,(len(availends),1))
+
+    vals_ee = energyfuncs.uniform( availendsr.ends, availendst.ends )
+    vals_ec = energyfuncs.uniform( availendsr.ends, availendst.comps )
+    vals_ce = energyfuncs.uniform( availendsr.comps, availendst.ends )
+    vals_cc = energyfuncs.uniform( availendsr.comps, availendst.comps )
+    
+    vals_tf = ( (vals_ee < maxendspurious) & (vals_cc < maxendspurious) & (vals_ec < maxcompspurious) & (vals_ce < maxcompspurious) )
+    zipendsnf = zip(availendsr.tolist(),availendst.tolist()) 
+    zipends = [ zipendsnf[x] for x in np.flatnonzero(vals_tf) ]
+    
+    if not runnx:
+        return zipends
+
+    import networkx as nx
+    G = nx.Graph()
+    G.add_edges_from(zipends)
+
+    maxl = 0
+    for clique in nx.clique.find_cliques(G):
+        if len(clique) > maxl:
+            print "Found clique length {0}: {1}".format(len(clique),clique)
+            maxl = len(clique)
+            maxc = clique
+    return maxc
 
 def spacefilter_standard(desint, dev, maxself):
     """
@@ -463,6 +549,16 @@ def endchooser_standard(desint):
         ddiff = ( energyfuncs.matching_uniform( availends ) - desint )**2
         choices = np.flatnonzero( ddiff == np.amin(ddiff) )
         newend = availends[choices[np.random.randint(0,len(choices))]]
+        return newend
+    return endchooser
+
+def endchooser_random():
+    """
+    An endchooser function: return a random end with end-comp energy closest to
+    desint.
+    """
+    def endchooser( currentends, availends, energyfuncs ):
+        newend = availends[np.random.randint(0,len(availends))]
         return newend
     return endchooser
 
