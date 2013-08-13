@@ -4,7 +4,7 @@ import logging
 
 class endarray(np.ndarray):
     """
-    This is a class for arrays full ends (of type 
+    This is a class for arrays full ends (of type
     adjacent+end+wc-adjacent-of-complementary-end).
 
     At present, it also handles adjacent+end style ends, but self.end and
@@ -21,22 +21,22 @@ class endarray(np.ndarray):
         if obj is None: return
         self.endtype = getattr(obj, 'endtype', None)
     def _get_ends( self ):
-        if self.endtype == 'DT': 
+        if self.endtype == 'DT':
             return self[:,:-1]
         elif self.endtype == 'TD':
             return self[:,1:]
     def _get_comps( self ):
-        if self.endtype == 'DT': 
+        if self.endtype == 'DT':
             return (3-self)[:,::-1][:,:-1]
         elif self.endtype == 'TD':
             return (3-self)[:,::-1][:,1:]
     def _get_adjs( self ):
-        if self.endtype == 'DT': 
+        if self.endtype == 'DT':
             return self[:,0]
         elif self.endtype == 'TD':
             return self[:,-1]
     def _get_cadjs( self ):
-        if self.endtype == 'DT': 
+        if self.endtype == 'DT':
             return (3-self)[:,-1]
         elif self.endtype == 'TD':
             return (3-self)[:,0]
@@ -51,7 +51,7 @@ class endarray(np.ndarray):
         return n
     def __repr__( self ):
         return "<endarray ({2}): type {0}; {1}>".format( \
-                self.endtype, repr(self.tolist()), len(self) ) 
+                self.endtype, repr(self.tolist()), len(self) )
     def tolist( self ):
         st = ["a","c","g","t"]
         return [ "".join([ st[x] for x in y]) for y in self ]
@@ -60,7 +60,7 @@ class endarray(np.ndarray):
     comps = property(_get_comps)
     adjs = property(_get_adjs)
     cadjs = property(_get_cadjs)
-    strings = property(tolist) 
+    strings = property(tolist)
 
 nt = { 'a': 0, 'c': 1, 'g': 2, 't': 3 }
 lton = { 'a': [0],
@@ -98,7 +98,7 @@ def values_chunked(items, endtype, chunk_dim=10):
     than chunk_dim.
 
     Return this as an endarray, with set endtype. This can be easily removed
-    for use elsewhere.  
+    for use elsewhere.
     """
     ilengths = [len(x) for x in items]
     n = len(items)
@@ -113,7 +113,7 @@ def values_chunked(items, endtype, chunk_dim=10):
         def outer_iter():
             yield()
         outer = outer_iter()
-        
+
     chunk = np.zeros([np.prod( ilengths[p:] ),len(items)],dtype=int).view(endarray)
     chunk.endtype = endtype
     chunk[:,p:] = np.indices(ilengths[p:]).reshape(q,-1).T
@@ -123,9 +123,47 @@ def values_chunked(items, endtype, chunk_dim=10):
         chunk[:,:p] = seq
         yield chunk
 
+def get_accept_set( endtype, length, interaction, fdev, maxendspurious, spacefilter=None, adjacents=['n','n'], alphabet='n', energyfuncs=None ):
+    if not energyfuncs:
+        energyfuncs = energyfuncs_santalucia(mismatchtype='max')
+    if not spacefilter:
+        spacefilter = spacefilter_standard(interaction, interaction*fdev, maxendspurious)
+    # Generate the template.
+    if endtype == 'DT':
+        template = [lton[adjacents[0]]] + [lton[alphabet.lower()]] * length \
+                   + [lton[wc[adjacents[1]]]]
+    elif endtype == 'TD':
+        template = [lton[wc[adjacents[1]]]] + [lton[alphabet.lower()]] * length \
+                   + [lton[adjacents[0]]]
+
+    logging.info( "Length {0}, type {1}, adjacents {2}, alphabet {3}.".format( \
+                  length,endtype,adjacents,alphabet) )
+    logging.debug( "Have template {0}.".format(template,endtype))
+
+    # Create the chunk iterator
+    endchunk = values_chunked(template, endtype)
+
+    # Use spacefilter to filter chunks down to usable sequences
+    matcharrays = []
+    chunknum = 0
+    totchunks = None
+    totends = np.product( [len(x) for x in template] )
+    logging.info( "Have {0} ends in total before any filtering.".format(totends) )
+    for chunk in endchunk:
+        matcharrays.append(spacefilter(chunk,energyfuncs))
+        if not totchunks:
+            totchunks = totends/len(chunk)
+        chunknum += 1
+        logging.debug( "Found {0} filtered ends in chunk {1} of {2}.".format(
+            len(matcharrays[-1]), chunknum, totchunks))
+    logging.info( "Done with spacefiltering." )
+    availends = np.vstack( matcharrays ).view(endarray)
+    availends.endtype = endtype
+    return availends
+
 def find_end_set_uniform( endtype, length, spacefilter, endfilter, endchooser,\
                           energyfuncs, adjacents=['n','n'], num=0, numtries=1,\
-                          oldendfilter=None, oldends = [], alphabet='n'): 
+                          oldendfilter=None, oldends = [], alphabet='n'):
     """
         Find a set of ends of uniform length and type satisfying uniform
         constraint functions (eg, constrant functions are the same for each
@@ -133,7 +171,7 @@ def find_end_set_uniform( endtype, length, spacefilter, endfilter, endchooser,\
 
         * endtype: right now 'DT' for 3'-terminal ends, and 'TD' for
           5'-terminal ends,
-        * length: length of ends, not including adjacents. 
+        * length: length of ends, not including adjacents.
         * adjacents (defaults to ['n','n']): acceptable bases for adjacents
           (eg, ['n','n'] or ['c', 'c']) for the ends and their complements,
         * num (defaults to 0): number of ends to find (0 keeps finding until
@@ -145,7 +183,7 @@ def find_end_set_uniform( endtype, length, spacefilter, endfilter, endchooser,\
           filters them down to ends that, not considering spurious
           interactions, are acceptable.
         * endfilter: an "endfilter" function that takes current ends in the
-          set, available ends (filtered with current ends), and new ends added, 
+          set, available ends (filtered with current ends), and new ends added,
           and filters the available ends, considering interactions between ends
           (eg, spurious interactions).
         * endchooser: an "endchooser" function that takes current ends in the
@@ -171,14 +209,14 @@ def find_end_set_uniform( endtype, length, spacefilter, endfilter, endchooser,\
     elif endtype == 'TD':
         template = [lton[wc[adjacents[1]]]] + [lton[alphabet.lower()]] * length \
                    + [lton[adjacents[0]]]
-    
+
     logging.info( "Length {0}, type {1}, adjacents {2}, alphabet {3}.".format( \
                   length,endtype,adjacents,alphabet) )
     logging.debug( "Have template {0}.".format(template,endtype))
-    
+
     # Create the chunk iterator
     endchunk = values_chunked(template, endtype)
-    
+
     # Use spacefilter to filter chunks down to usable sequences
     matcharrays = []
     chunknum = 0
@@ -196,7 +234,7 @@ def find_end_set_uniform( endtype, length, spacefilter, endfilter, endchooser,\
     availends = np.vstack( matcharrays ).view(endarray)
     availends.endtype = endtype
 
-    
+
     # Use endfilter to filter available sequences taking into account old sequences.
     if len(oldends)>0:
         if type(oldends[0]) is str:
@@ -251,10 +289,10 @@ def enhist( endtype, length, adjacents=['n','n'], alphabet='n',\
     elif endtype == 'TD':
         template = [lton[wc[adjacents[1]]]] +\
                    [lton[alphabet.lower()]] * length + [lton[adjacents[0]]]
-   
+
     if not energyfuncs:
         energyfuncs = energyfuncs_santalucia(mismatchtype='max')
-    
+
     minbin = 0.8*energyfuncs.matching_uniform( \
             endarray( [([0,3]*length)[0:length+2]], endtype ) )
     maxbin = 1.1*energyfuncs.matching_uniform( \
@@ -264,10 +302,10 @@ def enhist( endtype, length, adjacents=['n','n'], alphabet='n',\
         bins = np.arange(minbin,maxbin,0.1)
 
     logging.debug( "Have template {0} and type {1}.".format(template,endtype))
-    
+
     # Create the chunk iterator
     endchunk = values_chunked(template, endtype)
-    
+
     hist = np.zeros(len(bins)-1,dtype='int')
     totends = np.product( [len(x) for x in template] )
     finishedends = 0
@@ -281,7 +319,7 @@ def enhist( endtype, length, adjacents=['n','n'], alphabet='n',\
                 + np.mean(matchens)*len(chunk)/(len(chunk)+finishedends)
         finishedends += len(matchens)
         logging.debug( "Done with {0}/{1} ends.".format(finishedends,totends) )
-    
+
     x = (bins[:-1]+bins[1:])/2
     n = hist
     info['emean'] = np.sum( n*x, dtype='double' ) / np.sum( n, dtype='int64' )
@@ -303,7 +341,7 @@ def enhist( endtype, length, adjacents=['n','n'], alphabet='n',\
         plt.ylabel("Number of Ends")
         #plt.show()
 
-    return (hist,bins,info) 
+    return (hist,bins,info)
 
 
 def easyends( endtype, endlength, number=0, interaction=None, fdev=0.05,\
@@ -312,7 +350,7 @@ def easyends( endtype, endlength, number=0, interaction=None, fdev=0.05,\
     """
     Easyends is an attempt at creating an easy-to-use function for finding sets
     of ends.
-    
+
     * endtype: specifies the type of end being considered. The system for
       classifying end types goes from 5' to 3', and consists of letters
       describing each side of the end. For example, an end that starts after a
@@ -322,9 +360,9 @@ def easyends( endtype, endlength, number=0, interaction=None, fdev=0.05,\
       for terminal, 'D' stands for double-stranded region, and 'S' stands for
       single-stranded region. 'S', however, is not currently supported.
     * endlength: specifies the length of end being considered, not including
-      adjacent bases.  
+      adjacent bases.
     * number (optional): specifies the number of ends to find.  If zero or not
-      provided, easyends tries to find as many ends as possible.  
+      provided, easyends tries to find as many ends as possible.
     * interaction (optional): a positive number corresponding to the desired
       standard free energy for hybridization of matching sticky ends. If not
       provided, easyends calculates an optimal value based on the sequence
@@ -363,12 +401,12 @@ def easyends( endtype, endlength, number=0, interaction=None, fdev=0.05,\
         maxendspurious = maxspurious*interaction
     else:
         maxendspurious = maxendspurious*interaction
-    
+
     sfilt = spacefilter_standard(interaction, interaction*fdev, maxendspurious)
     efilt = endfilter_standard_advanced(maxcompspurious,maxendspurious)
     if not echoose:
         echoose = endchooser_standard(interaction)
-    
+
     return find_end_set_uniform( endtype, endlength, sfilt, efilt, echoose,\
            energyfuncs=efunc, numtries=tries, oldends=oldends,adjacents=adjs,\
            num=number,alphabet=alphabet)
@@ -391,7 +429,7 @@ def easy_space( endtype, endlength, interaction=None, fdev=0.05,\
         maxendspurious = maxspurious*interaction
     else:
         maxendspurious = maxendspurious*interaction
-    
+
     sfilt = spacefilter_standard(interaction, interaction*fdev, maxendspurious)
     spacefilter = sfilt
     efilt = endfilter_standard_advanced(maxcompspurious,maxendspurious)
@@ -409,7 +447,7 @@ def easy_space( endtype, endlength, interaction=None, fdev=0.05,\
 
     # Create the chunk iterator
     endchunk = values_chunked(template, endtype)
-    
+
     # Use spacefilter to filter chunks down to usable sequences
     matcharrays = []
     chunknum = 0
@@ -426,7 +464,7 @@ def easy_space( endtype, endlength, interaction=None, fdev=0.05,\
     logging.info( "Done with spacefiltering." )
     availends = np.vstack( matcharrays ).view(endarray)
     availends.endtype = endtype
-    
+
     availendsr = np.repeat(availends,len(availends), axis=0)
     availendst = np.tile(availends,(len(availends),1))
 
@@ -434,11 +472,11 @@ def easy_space( endtype, endlength, interaction=None, fdev=0.05,\
     vals_ec = energyfuncs.uniform( availendsr.ends, availendst.comps )
     vals_ce = energyfuncs.uniform( availendsr.comps, availendst.ends )
     vals_cc = energyfuncs.uniform( availendsr.comps, availendst.comps )
-    
+
     vals_tf = ( (vals_ee < maxendspurious) & (vals_cc < maxendspurious) & (vals_ec < maxcompspurious) & (vals_ce < maxcompspurious) )
-    zipendsnf = zip(availendsr.tolist(),availendst.tolist()) 
+    zipendsnf = zip(availendsr.tolist(),availendst.tolist())
     zipends = [ zipendsnf[x] for x in np.flatnonzero(vals_tf) ]
-    
+
     if not runnx:
         return zipends
 
@@ -571,10 +609,19 @@ class energyfuncs_santalucia:
     it takes the maximum interaction of the 'loop' and 'dangle' options.
     """
     def __init__(self, mismatchtype='max'):
+        import os
         try:
-            self.nndG_full = -np.loadtxt('dnastackingbig.csv',delimiter=',')
-        except IOError:
-            raise IOError("Error loading dnastackingbig.csv")
+            import pkg_resources
+            dsb = pkg_resources.resource_stream(__name__, os.path.join('params','dnastackingbig.csv'))
+        except:
+            try:
+                this_dir, this_filename = os.path.split(__file__)
+                dsb = open( os.path.join(this_dir, "params", "dnastackingbig.csv") )
+            except IOError:
+                raise IOError("Error loading dnastackingbig.csv")
+        self.nndG_full = -np.loadtxt(dsb ,delimiter=',')
+        dsb.close()
+
         self.nndG = self.nndG_full[np.arange(0,16),15-np.arange(0,16)]
         if mismatchtype == 'max':
             self.uniform = lambda x,y: np.maximum( self.uniform_loopmismatch(x,y), \
@@ -598,11 +645,11 @@ class energyfuncs_santalucia:
                 raise InputError("Lengths of sequence arrays are not acceptable.")
         assert seqs1.endtype == seqs2.endtype
         endtype = seqs1.endtype
-    
+
         endlen = seqs1.endlen
         plen = endlen-1
 
-        # TODO: replace this with cleaner code 
+        # TODO: replace this with cleaner code
         if endtype=='DT':
             ps1 = seqs1[:,1:-1]*4+seqs1[:,2:]
             pa1 = seqs1[:,0]*4+seqs1[:,1]
@@ -617,7 +664,7 @@ class energyfuncs_santalucia:
             ps2 = seqs2[:,::-1][:,1:-1]*4+seqs2[:,::-1][:,2:]
             pa2 = seqs2[:,-2]*4+seqs2[:,-1]
             pac2 = (seqs1[:,-1])*4+(3-seqs2[:,-1])
-        
+
         # Shift here is considering the first strand as fixed, and the second one as
         # shifting.  The shift is the offset of the bottom one in terms of pair
         # sequences (thus +2 and -1 instead of +1 and 0).
@@ -631,7 +678,7 @@ class energyfuncs_santalucia:
                                axis=1)
         en[:,plen-1] = en[:,plen-1] + self.nndG_full[pa1,pac1] + self.nndG_full[pa2,pac2]
         return np.amax(en,1)
-       
+
     def uniform_danglemismatch(self, seqs1,seqs2,fast=True):
         if seqs1.shape != seqs2.shape:
             if seqs1.ndim == 1:
@@ -684,35 +731,9 @@ class energyfuncs_santalucia:
                 if not i%1000:
                     print "%d/%d" % (i,im)
         else:
-            import scipy.weave as weave
-            oldcode = r"""
-                double *p1,*res;
-                double g,d,q;
-                PyArrayIterObject *itr;
-                int axis = 1;
-                g = 0;
-                d = 0;
-                itr = (PyArrayIterObject *) PyArray_IterAllButAxis(py_x,&axis);
-                while(PyArray_ITER_NOTDONE(itr)) {
-                    const int go = x_array->strides[axis]/sizeof(double);
-                    p1 = (double *) PyArray_ITER_DATA(itr);
-                    res = (double *) PyArray_GETPTR1(py_r,itr->index);
-                    g = 0;
-                    d = 0;
-                    for (int i = 0; i < x_array->dimensions[axis]; i++) {
-                        d+=*p1;
-                        if (d>g) g=d;
-                        if ((*p1)==0) d=0;
-                        p1+=go;
-                    }
-                    *res = g;
-                    PyArray_ITER_NEXT(itr);
-                }
-                Py_DECREF(itr);
-                Py_DECREF(py_x);
-            """
+            import _stickyext
             x = m
-            weave.inline(oldcode,['x','r'])
+            _stickyext.fastsub(x,r)
 
         return r
 
