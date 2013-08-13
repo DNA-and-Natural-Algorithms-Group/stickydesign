@@ -2,7 +2,7 @@ from setuptools import setup, Extension
 import numpy
 
 # define the extension module
-stickyext = Extension('stickydesign._stickyext', sources=['stickydesign/_stickyext.c'],
+stickyext = Extension('stickydesign._stickyext', sources=['src/_stickyext.c'],
                           include_dirs=[numpy.get_include()])
 
 # run the setup
