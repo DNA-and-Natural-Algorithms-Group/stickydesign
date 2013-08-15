@@ -621,7 +621,7 @@ class energyfuncs_santalucia:
                 raise IOError("Error loading dnastackingbig.csv")
         self.nndG_full = -np.loadtxt(dsb ,delimiter=',')
         dsb.close()
-
+        self.initdG = 1.96
         self.nndG = self.nndG_full[np.arange(0,16),15-np.arange(0,16)]
         if mismatchtype == 'max':
             self.uniform = lambda x,y: np.maximum( self.uniform_loopmismatch(x,y), \
@@ -635,7 +635,7 @@ class energyfuncs_santalucia:
             raise InputError("Mismatchtype {0} is not supported.".format(mismatchtype))
 
     def matching_uniform(self, seqs):
-        return np.sum(self.nndG[tops(seqs)],axis=1)
+        return np.sum(self.nndG[tops(seqs)],axis=1) - self.initdG
 
     def uniform_loopmismatch(self, seqs1, seqs2):
         if seqs1.shape != seqs2.shape:
@@ -677,7 +677,7 @@ class energyfuncs_santalucia:
                                ps2[:,max(-shift,0):plen-shift] ], \
                                axis=1)
         en[:,plen-1] = en[:,plen-1] + self.nndG_full[pa1,pac1] + self.nndG_full[pa2,pac2]
-        return np.amax(en,1)
+        return np.amax(en,1) - self.initdG
 
     def uniform_danglemismatch(self, seqs1,seqs2,fast=True):
         if seqs1.shape != seqs2.shape:
@@ -735,7 +735,7 @@ class energyfuncs_santalucia:
             x = m
             _stickyext.fastsub(x,r)
 
-        return r
+        return r-self.initdG
 
 
 tops = lambda s: 4*s[:,:-1]+s[:,1:]
