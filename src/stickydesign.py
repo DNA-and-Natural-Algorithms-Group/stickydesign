@@ -44,6 +44,8 @@ class endarray(np.ndarray):
         return self.shape[0]
     def _get_endlen( self ):
         return self.shape[1]-1
+    def _get_seqlen( self ):
+        return self.shape[1]
     def append(s1,s2):
         assert s1.endtype == s2.endtype
         n = np.vstack( (s1, s2) ).view(endarray)
@@ -56,6 +58,7 @@ class endarray(np.ndarray):
         st = ["a","c","g","t"]
         return [ "".join([ st[x] for x in y]) for y in self ]
     endlen = property(_get_endlen)
+    seqlen = property(_get_seqlen) # Added for new code compatibility
     ends = property(_get_ends)
     comps = property(_get_comps)
     adjs = property(_get_adjs)
@@ -621,7 +624,7 @@ class energyfuncs_santalucia:
                 raise IOError("Error loading dnastackingbig.csv")
         self.nndG_full = -np.loadtxt(dsb ,delimiter=',')
         dsb.close()
-        self.initdG = 1.96
+        self.initdG = 0.0 # 1.96 DISABLED FOR NOW
         self.nndG = self.nndG_full[np.arange(0,16),15-np.arange(0,16)]
         if mismatchtype == 'max':
             self.uniform = lambda x,y: np.maximum( self.uniform_loopmismatch(x,y), \
@@ -640,7 +643,7 @@ class energyfuncs_santalucia:
     def uniform_loopmismatch(self, seqs1, seqs2):
         if seqs1.shape != seqs2.shape:
             if seqs1.ndim == 1:
-                seqs1 = np.repeat(np.array([seqs1]),seqs2.shape[0],0)
+                seqs1 = endarray( np.repeat(np.array([seqs1]),seqs2.shape[0],0), seqs1.endtype )
             else:
                 raise InputError("Lengths of sequence arrays are not acceptable.")
         assert seqs1.endtype == seqs2.endtype
@@ -682,7 +685,7 @@ class energyfuncs_santalucia:
     def uniform_danglemismatch(self, seqs1,seqs2,fast=True):
         if seqs1.shape != seqs2.shape:
             if seqs1.ndim == 1:
-                seqs1 = np.repeat(np.array([seqs1]),seqs2.shape[0],0)
+                seqs1 = endarray( np.repeat(np.array([seqs1]),seqs2.shape[0],0), seqs1.endtype )
             else:
                 raise InputError("Lengths of sequence arrays are not acceptable.")
         assert seqs1.endtype == seqs2.endtype
