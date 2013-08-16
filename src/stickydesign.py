@@ -13,8 +13,8 @@ class endarray(np.ndarray):
     """
     def __new__( cls, array, endtype ):
         if type(array[0]) is str:
-            array = np.array([[ nt[x] for x in y ] for y in array ])
-        obj = np.asarray(array).view(cls)
+            array = np.array([[ nt[x] for x in y ] for y in array ],dtype=np.uint8)
+        obj = np.asarray(array,dtype=np.uint8).view(cls)
         obj.endtype = endtype
         return obj
     def __array_finalize__(self, obj):
