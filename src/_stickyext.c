@@ -7,23 +7,25 @@ static PyObject* fastsub(PyObject* self, PyObject* args) {
     PyArrayObject *py_x;
     PyArrayObject      *py_r;
     PyArrayIterObject *itr;
+    double *p1,*res;
+    double g,d;
+    int axis = 1;
+    int go;
+    int i;
     
     if (!PyArg_ParseTuple(args, "O!O!", &PyArray_Type, &py_x, &PyArray_Type, &py_r))
         return NULL;
     
-    double *p1,*res;
-    double g,d;
-    int axis = 1;
     g = 0;
     d = 0;
     itr = (PyArrayIterObject *) PyArray_IterAllButAxis((PyObject*)py_x,&axis);
     while(PyArray_ITER_NOTDONE(itr)) {
-        const int go = py_x->strides[axis]/sizeof(double);
+        go = py_x->strides[axis]/sizeof(double);
         p1 = (double *) PyArray_ITER_DATA(itr);
         res = (double *) PyArray_GETPTR1(py_r,itr->index);
         g = 0;
         d = 0;
-        for (int i = 0; i < py_x->dimensions[axis]; i++) {
+        for (i = 0; i < py_x->dimensions[axis]; i++) {
             d+=*p1;
             if (d>g) g=d;
             if ((*p1)==0) d=0;
