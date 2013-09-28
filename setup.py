@@ -8,7 +8,7 @@ stickyext = Extension('stickydesign._stickyext', sources=['src/_stickyext.c'],
 # run the setup
 setup(
     name='stickydesign',
-    version='0.2dev',
+    version='0.3',
 
     install_requires = ['numpy'],
 
@@ -20,5 +20,5 @@ setup(
     author = "Constantine Glen Evans",
     author_email = "cevans@dna.caltech.edu",
     description = "StickyDesign DNA Tile Sticky End Package",
-    url = 'http://dna.caltech.edu/stickydesign'
+    url = 'http://dna.caltech.edu/StickyDesign'
 )
