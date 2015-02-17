@@ -503,7 +503,11 @@ def spacefilter_standard(desint, dev, maxself):
     """
     def spacefilter( fullends, energyfuncs ):
         matchenergies = energyfuncs.matching_uniform( fullends )
-        i = np.flatnonzero( (matchenergies<desint+dev) & (matchenergies>desint-dev) )
+        g4 = np.zeros(fullends.shape[0])
+        for w in range(0,(fullends.shape[1]-3)):
+            g4 += (np.sum( np.array(fullends[:,w:(w+4)] == [2,2,2,2]), axis=1 ) == 4)
+            g4 += (np.sum( np.array(fullends[:,w:(w+4)] == [1,1,1,1]), axis=1 ) == 4)
+        i = np.flatnonzero( (matchenergies<desint+dev) & (matchenergies>desint-dev) & (g4==0) )
         matchenergies = matchenergies[i]; fullends = fullends[i]
         selfselfenergies = energyfuncs.uniform( fullends.ends, fullends.ends )
         compcompenergies = energyfuncs.uniform( fullends.comps, fullends.comps )
