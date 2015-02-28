@@ -262,7 +262,7 @@ def find_end_set_uniform( endtype, length, spacefilter, endfilter, endchooser,\
             newend.endtype = endtype
             availends = endfilter( newend, curends, availends, energyfuncs )
             logging.debug("Done filtering.")
-            if curends == None:
+            if curends is None:
                 curends = newend
             elif len(curends) == 0:
                 curends = newend
