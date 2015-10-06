@@ -70,7 +70,7 @@ To get an array of interactions between an set of sticky ends, use the
 `energy_array_uniform` function. This array can then be plotted with `matplotlib`:
 
 	In[5]: energyarray = stickydesign.energy_array_uniform( Out[2], 
-		stickydesign.energyfuncs_santalucia() )
+		stickydesign.energetics_santalucia() )
 		
 	In[6]: import matplotlib.pyplot as pyplot
 	
