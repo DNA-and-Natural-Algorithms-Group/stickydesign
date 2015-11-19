@@ -337,7 +337,7 @@ def enhist( endtype, length, adjacents=['n','n'], alphabet='n',\
         finishedends += len(matchens)
         logging.debug( "Done with {0}/{1} ends.".format(finishedends,totends) )
 
-    x = (bins[:-1]+bins[1:])//2
+    x = (bins[:-1]+bins[1:])/2
     n = hist
     info['emean'] = np.sum( n*x, dtype='double' ) / np.sum( n, dtype='int64' )
     info['estd'] =  np.sqrt( np.sum( n*(x-info['emean'])**2, dtype='double' )\
