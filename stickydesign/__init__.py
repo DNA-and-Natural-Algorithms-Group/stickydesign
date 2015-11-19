@@ -1,1 +1,1 @@
-from stickydesign import *
+from .stickydesign import *

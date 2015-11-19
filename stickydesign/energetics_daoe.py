@@ -1,3 +1,4 @@
+from __future__ import division
 import os
 import pkg_resources
 import numpy as np
@@ -128,19 +129,19 @@ ends.
         s2 = tops(seqs2)
         l = s1.shape[1]
         s2r = np.fliplr(np.invert(s2)%16)
-        s2r = s2r/4 + 4*(s2r%4)
+        s2r = s2r//4 + 4*(s2r%4)
         m = np.zeros((s1.shape[0],2*np.sum(np.arange(2,l+1))+l+1))
         r = np.zeros(m.shape[0])
         z = 0;
         if endtype == 'TD':
             s1c = s1[:,0:-1]
             s2rc = s2r[:,1:]
-            s1l = np.hstack(( (4*(s2r[:,0]/4) + s1[:,0]/4).reshape(-1,1) , s1 ))
+            s1l = np.hstack(( (4*(s2r[:,0]//4) + s1[:,0]//4).reshape(-1,1) , s1 ))
             s2rl = np.hstack(( s2r , (4*(s2r[:,-1]%4) + s1[:,-1]%4).reshape(-1,1) ))
         elif endtype == 'DT':
             s1c = s1[:,1:]
             s2rc = s2r[:,0:-1]
-            s2rl = np.hstack(( (4*(s1[:,0]/4) + s2r[:,0]/4).reshape(-1,1) , s2r ))
+            s2rl = np.hstack(( (4*(s1[:,0]//4) + s2r[:,0]//4).reshape(-1,1) , s2r ))
             s1l = np.hstack(( s1 , (4*(s1[:,-1]%4) + s2r[:,-1]%4).reshape(-1,1) ))
         for o in range(1,l-1):
             zn = l-1-o
@@ -170,9 +171,9 @@ ends.
             m[:,z+l] += + (m[:,z+l]!=0)*(dangle5dG37[s2[:,-1]] - self.coaxparams*coaxddG37[s2[:,-1]]) # sign reversed
         i = 0
         im = len(m)
-        import _stickyext
+        from ._stickyext import fastsub
         x = m
-        _stickyext.fastsub(x,r)
+        fastsub(x,r)
 
         return r-initdG37
 

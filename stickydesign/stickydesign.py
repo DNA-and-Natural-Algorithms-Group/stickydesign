@@ -1,17 +1,18 @@
+from __future__ import division
 import numpy as np
 import itertools
 import logging
-from energetics import *
+from .energetics import *
 
 class pairseqa(np.ndarray):
     def __new__( cls, array ):
         obj = ( 4*array[:,:-1]+array[:,1:] ).view(cls)
         return obj
     def revcomp( self ):
-        return 4*(3-(self[:,::-1]%4)) + 3-(self[:,::-1]/4)
+        return 4*(3-(self[:,::-1]%4)) + 3-(self[:,::-1]//4)
     def tolist( self ):
         st = ["a","c","g","t"]
-        return [ "".join([ st[x/4] for x in y] + [st[y[-1]%4]]) for y in self ]
+        return [ "".join([ st[x//4] for x in y] + [st[y[-1]%4]]) for y in self ]
     def __repr__( self ):
         return "{}".format(repr(self.tolist()))
 
@@ -168,7 +169,7 @@ def get_accept_set( endtype, length, interaction, fdev, maxendspurious, spacefil
     for chunk in endchunk:
         matcharrays.append(spacefilter(chunk,energetics))
         if not totchunks:
-            totchunks = totends/len(chunk)
+            totchunks = totends//len(chunk)
         chunknum += 1
         logging.debug( "Found {0} filtered ends in chunk {1} of {2}.".format(
             len(matcharrays[-1]), chunknum, totchunks))
@@ -242,7 +243,7 @@ def find_end_set_uniform( endtype, length, spacefilter, endfilter, endchooser,\
     for chunk in endchunk:
         matcharrays.append(spacefilter(chunk,energetics))
         if not totchunks:
-            totchunks = totends/len(chunk)
+            totchunks = totends//len(chunk)
         chunknum += 1
         logging.debug( "Found {0} filtered ends in chunk {1} of {2}.".format(
             len(matcharrays[-1]), chunknum, totchunks))
@@ -336,7 +337,7 @@ def enhist( endtype, length, adjacents=['n','n'], alphabet='n',\
         finishedends += len(matchens)
         logging.debug( "Done with {0}/{1} ends.".format(finishedends,totends) )
 
-    x = (bins[:-1]+bins[1:])/2
+    x = (bins[:-1]+bins[1:])//2
     n = hist
     info['emean'] = np.sum( n*x, dtype='double' ) / np.sum( n, dtype='int64' )
     info['estd'] =  np.sqrt( np.sum( n*(x-info['emean'])**2, dtype='double' )\
@@ -473,7 +474,7 @@ def easy_space( endtype, endlength, interaction=None, fdev=0.05,\
     for chunk in endchunk:
         matcharrays.append(spacefilter(chunk,energetics))
         if not totchunks:
-            totchunks = totends/len(chunk)
+            totchunks = totends//len(chunk)
         chunknum += 1
         logging.debug( "Found {0} filtered ends in chunk {1} of {2}.".format(
             len(matcharrays[-1]), chunknum, totchunks))
@@ -503,7 +504,7 @@ def easy_space( endtype, endlength, interaction=None, fdev=0.05,\
     maxl = 0
     for clique in nx.clique.find_cliques(G):
         if len(clique) > maxl:
-            print "Found clique length {0}: {1}".format(len(clique),clique)
+            print("Found clique length {0}: {1}".format(len(clique),clique))
             maxl = len(clique)
             maxc = clique
     return maxc
@@ -634,4 +635,4 @@ if __name__ == '__main__':
 
     E = easyends( *args )
 
-    print repr(E)
+    print(repr(E))

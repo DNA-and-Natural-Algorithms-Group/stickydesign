@@ -2,6 +2,21 @@
 #include <numpy/arrayobject.h>
 #include <math.h>
 
+struct module_state {
+    PyObject *error;
+};
+
+#if PY_MAJOR_VERSION >= 3
+#define IS_PY3K
+#endif
+
+#if PY_MAJOR_VERSION >= 3
+#define GETSTATE(m) ((struct module_state*)PyModule_GetState(m))
+#else
+#define GETSTATE(m) (&_state)
+static struct module_state _state;
+#endif
+
 static PyObject* fastsub(PyObject* self, PyObject* args) {
 
     PyArrayObject *py_x;
@@ -41,18 +56,69 @@ static PyObject* fastsub(PyObject* self, PyObject* args) {
 /*  define functions in module */
 static PyMethodDef FastSub[] =
 {
-     {"fastsub", fastsub, METH_VARARGS,
+     {"fastsub", (PyCFunction)fastsub, METH_VARARGS,
          "fastsub!"},
      {NULL, NULL, 0, NULL}
 };
 
 /* module initialization */
-PyMODINIT_FUNC
+#if PY_MAJOR_VERSION >= 3
 
+static int FastSub_traverse(PyObject *m, visitproc visit, void *arg) {
+    Py_VISIT(GETSTATE(m)->error);
+    return 0;
+}
+
+static int FastSub_clear(PyObject *m) {
+    Py_CLEAR(GETSTATE(m)->error);
+    return 0;
+}
+
+
+static struct PyModuleDef moduledef = {
+        PyModuleDef_HEAD_INIT,
+        "stickyext",
+        NULL,
+        sizeof(struct module_state),
+        FastSub,
+        NULL,
+        FastSub_traverse,
+        FastSub_clear,
+        NULL
+};
+
+#define INITERROR return NULL
+
+PyObject *
+PyInit__stickyext(void)
+
+#else
+#define INITERROR return
+
+PyMODINIT_FUNC
 init_stickyext(void)
+#endif
 {
-     (void) Py_InitModule("_stickyext", FastSub);
+#if PY_MAJOR_VERSION >= 3
+    PyObject *module = PyModule_Create(&moduledef);
+#else
+    PyObject *module = Py_InitModule("_stickyext", FastSub);
+#endif
+
+    if (module == NULL)
+        INITERROR;
+    struct module_state *st = GETSTATE(module);
+
+    st->error = PyErr_NewException("_stickyext.Error", NULL, NULL);
+    if (st->error == NULL) {
+        Py_DECREF(module);
+        INITERROR;
+    }
      /* IMPORTANT: this must be called */
-     import_array();
+    import_array();
+
+#if PY_MAJOR_VERSION >= 3
+    return module;
+#endif
 }
 
