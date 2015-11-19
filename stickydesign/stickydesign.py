@@ -3,6 +3,18 @@ import itertools
 import logging
 from energetics import *
 
+class pairseqa(np.ndarray):
+    def __new__( cls, array ):
+        obj = ( 4*array[:,:-1]+array[:,1:] ).view(cls)
+        return obj
+    def revcomp( self ):
+        return 4*(3-(self[:,::-1]%4)) + 3-(self[:,::-1]/4)
+    def tolist( self ):
+        st = ["a","c","g","t"]
+        return [ "".join([ st[x/4] for x in y] + [st[y[-1]%4]]) for y in self ]
+    def __repr__( self ):
+        return "{}".format(repr(self.tolist()))
+
 class endarray(np.ndarray):
     """
     This is a class for arrays full ends (of type
