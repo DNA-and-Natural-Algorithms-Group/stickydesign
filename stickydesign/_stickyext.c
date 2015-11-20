@@ -42,10 +42,13 @@ static PyObject* fastsub(PyObject* self, PyObject* args) {
         d = 0;
         for (i = 0; i < py_x->dimensions[axis]; i++) {
             d+=*p1;
-            if (d>g) g=d;
-            if ((*p1)==0) d=0;
+            if ((*p1)==0) {
+                if (d>g) g=d;
+                d=0;
+            }
             p1+=go;
         }
+        if (d>g) g=d;
         *res = g;
         PyArray_ITER_NEXT(itr);
     }

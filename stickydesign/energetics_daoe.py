@@ -116,7 +116,7 @@ ends.
             pac1 = seqs2[:,0]*4+(3-seqs1[:,-1])
             ps2 = seqs2[:,::-1][:,1:-1]*4+seqs2[:,::-1][:,2:]
             pa2 = seqs2[:,-2]*4+seqs2[:,-1]
-            pac2 = (seqs1[:,-1])*4+(3-seqs2[:,-1])
+            pac2 = (seqs1[:,0])*4+(3-seqs2[:,-1])
 
         # Shift here is considering the first strand as fixed, and the second one as
         # shifting.  The shift is the offset of the bottom one in terms of pair
@@ -133,7 +133,7 @@ ends.
                         + (self.nndG37_full[pa2,pac2]>0)*(+ dangle3dG37[s2[:,0]] - self.coaxparams*coaxddG37[s2[:,0]]) # sign reversed
         if endtype == 'TD':
             en[:,plen-1] += + (self.nndG37_full[pa1,pac1]>0)*(dangle5dG37[s1[:,-1]] - self.coaxparams*coaxddG37[s1[:,-1]]) \
-                          + (self.nndG37_full[pa1,pac1]>0)*(dangle5dG37[s2[:,-1]] - self.coaxparams*coaxddG37[s2[:,-1]]) # sign reversed
+                          + (self.nndG37_full[pa2,pac2]>0)*(dangle5dG37[s2[:,-1]] - self.coaxparams*coaxddG37[s2[:,-1]]) # sign reversed
         return np.amax(en,1) - initdG37
 
     def uniform_danglemismatch(self, seqs1,seqs2,fast=True):

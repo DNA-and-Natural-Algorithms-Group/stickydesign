@@ -20,5 +20,7 @@ setup(
     author_email = "cevans@dna.caltech.edu",
     description = "StickyDesign DNA Tile Sticky End Package",
     url = 'http://dna.caltech.edu/StickyDesign',
-    zip_safe = True
+    zip_safe = True,
+
+    test_suite = 'nose.collector'
 )
