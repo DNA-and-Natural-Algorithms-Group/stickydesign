@@ -17,19 +17,19 @@ coaxdS = 0.0027/0.163 * coaxdG37 # from Zhang, 2009 supp info
 coaxddS = coaxdS-nndS
 coaxddG37 = coaxdG37-nndG37 # correction term rather than absolute dG
 
-dangle5dG37 = np.array([ -0.51, -0.96, -0.58, -0.5 , 
+dangle5dG37 = np.array([    -0.51, -0.96, -0.58, -0.5 , 
                             -0.42, -0.52, -0.34, -0.02, 
                             -0.62, -0.72, -0.56,  0.48, 
                             -0.71, -0.58, -0.61, -0.1 ])
-dangle5dH = np.array([  0.2, -6.3, -3.7, -2.9,
+dangle5dH = np.array([       0.2, -6.3, -3.7, -2.9,
                              0.6, -4.4, -4. , -4.1, 
                             -1.1, -5.1, -3.9, -4.2, 
                             -6.9, -4. , -4.9, -0.2])
-dangle3dG37 = np.array([ -0.12,  0.28, -0.01,  0.13,
+dangle3dG37 = np.array([    -0.12,  0.28, -0.01,  0.13,
                             -0.82, -0.31, -0.01, -0.52,
                             -0.92, -0.23, -0.44, -0.35,
                             -0.48, -0.19, -0.5 , -0.29])
-dangle3dH = np.array([ -0.5,  4.7, -4.1, -3.8,
+dangle3dH = np.array([      -0.5,  4.7, -4.1, -3.8,
                             -5.9, -2.6, -3.2, -5.2,
                             -2.1, -0.2, -3.9, -4.4,
                             -0.7,  4.4, -1.6,  2.9])
@@ -50,13 +50,24 @@ ends.
             raise NotImplementedError("Temperature adjustment is not yet implemented")
         self.coaxparams = coaxparams
 
+        import os
+        try:
+            import pkg_resources
+            dsb = pkg_resources.resource_stream(__name__, os.path.join('params','dnastackingbig.csv'))
+        except:
+            try:
+                this_dir, this_filename = os.path.split(__file__)
+                dsb = open( os.path.join(this_dir, "params", "dnastackingbig.csv") )
+            except IOError:
+                raise IOError("Error loading dnastackingbig.csv")
+        self.nndG37_full = -np.loadtxt(dsb ,delimiter=',')
+        dsb.close()
+
         if mismatchtype == 'max':
-            raise NotImplementedError("Max doesn't work yet")
             self.uniform = lambda x,y: np.maximum( self.uniform_loopmismatch(x,y), \
                                                    self.uniform_danglemismatch(x,y) \
                                                  )
         elif mismatchtype == 'loop':
-            raise NotImplementedError("Loop doesn't work yet")
             self.uniform = self.uniform_loopmismatch
         elif mismatchtype == 'dangle':
             self.uniform = self.uniform_danglemismatch
@@ -111,11 +122,11 @@ ends.
         en = np.zeros( (ps1.shape[0], 2*plen) )
         for shift in range(-plen+1,plen):
             en[:,plen+shift-1] = np.sum( \
-                    nndG37_full[ ps1[:,max(shift,0):plen+shift], \
+                    self.nndG37_full[ ps1[:,max(shift,0):plen+shift], \
                                ps2[:,max(-shift,0):plen-shift] ], \
                                axis=1)
-        en[:,plen-1] = en[:,plen-1] + nndG37_full[pa1,pac1] + nndG37_full[pa2,pac2]
-        return np.amax(en,1) - self.initdG
+        en[:,plen-1] = en[:,plen-1] + self.nndG37_full[pa1,pac1] + self.nndG37_full[pa2,pac2]
+        return np.amax(en,1) - initdG37
 
     def uniform_danglemismatch(self, seqs1,seqs2,fast=True):
         if seqs1.shape != seqs2.shape:
