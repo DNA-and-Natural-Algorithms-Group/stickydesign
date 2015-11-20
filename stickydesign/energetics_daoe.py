@@ -45,7 +45,7 @@ Energy functions based on several sources, primarily SantaLucia's 2004 paper,
 along with handling of dangles, tails, and nicks specifically for DX tile sticky
 ends.
     """
-    def __init__(self, temperature=37, mismatchtype='dangle', coaxparams=False):
+    def __init__(self, temperature=37, mismatchtype='max', coaxparams=False):
         if temperature != 37:
             raise NotImplementedError("Temperature adjustment is not yet implemented")
         self.coaxparams = coaxparams
@@ -100,6 +100,8 @@ ends.
         endlen = seqs1.endlen
         plen = endlen-1
 
+        s1 = tops(seqs1)
+        s2 = tops(seqs2)
         # TODO: replace this with cleaner code
         if endtype=='DT':
             ps1 = seqs1[:,1:-1]*4+seqs1[:,2:]
@@ -126,6 +128,12 @@ ends.
                                ps2[:,max(-shift,0):plen-shift] ], \
                                axis=1)
         en[:,plen-1] = en[:,plen-1] + self.nndG37_full[pa1,pac1] + self.nndG37_full[pa2,pac2]
+        if endtype == 'DT':
+            en[:,plen-1] += (self.nndG37_full[pa1,pac1]>0)*(+ dangle3dG37[s1[:,0]] - self.coaxparams*coaxddG37[s1[:,0]]) \
+                        + (self.nndG37_full[pa2,pac2]>0)*(+ dangle3dG37[s2[:,0]] - self.coaxparams*coaxddG37[s2[:,0]]) # sign reversed
+        if endtype == 'TD':
+            en[:,plen-1] += + (self.nndG37_full[pa1,pac1]>0)*(dangle5dG37[s1[:,-1]] - self.coaxparams*coaxddG37[s1[:,-1]]) \
+                          + (self.nndG37_full[pa1,pac1]>0)*(dangle5dG37[s2[:,-1]] - self.coaxparams*coaxddG37[s2[:,-1]]) # sign reversed
         return np.amax(en,1) - initdG37
 
     def uniform_danglemismatch(self, seqs1,seqs2,fast=True):
