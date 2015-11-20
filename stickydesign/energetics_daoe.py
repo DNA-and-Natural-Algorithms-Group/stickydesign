@@ -33,8 +33,8 @@ dangle3dH = np.array([      -0.5,  4.7, -4.1, -3.8,
                             -5.9, -2.6, -3.2, -5.2,
                             -2.1, -0.2, -3.9, -4.4,
                             -0.7,  4.4, -1.6,  2.9])
-dangle_5end_dS = ( dangle5dH - dangle5dG37 ) / 310.15
-dangle_3end_dS = ( dangle3dH - dangle3dG37 ) / 310.15
+dangle5dS = ( dangle5dH - dangle5dG37 ) / 310.15
+dangle3dS = ( dangle3dH - dangle3dG37 ) / 310.15
 initdG37 = 1.96
 initdS = 0.0057
 tailcordG37 = 0.8
@@ -46,9 +46,8 @@ along with handling of dangles, tails, and nicks specifically for DX tile sticky
 ends.
     """
     def __init__(self, temperature=37, mismatchtype='max', coaxparams=False):
-        if temperature != 37:
-            raise NotImplementedError("Temperature adjustment is not yet implemented")
         self.coaxparams = coaxparams
+        self.setup_params(temperature)
 
         import os
         try:
@@ -74,19 +73,27 @@ ends.
         else:
             raise InputError("Mismatchtype {0} is not supported.".format(mismatchtype))
 
+    def setup_params( self, temperature=37 ):
+        self.initdG = initdG37 - (temperature-37)*initdS
+        self.nndG = nndG37 - (temperature-37)*nndS
+        self.coaxddG = coaxddG37 - (temperature-37)*coaxddG37
+        self.dangle5dG = dangle5dG37 - (temperature-37)*dangle5dS
+        self.dangle3dG = dangle3dG37 - (temperature-37)*dangle3dS
+
+
     def matching_uniform(self, seqs):
         ps = pairseqa(seqs)
 
         # In both cases here, the energy we want is the NN binding energy of each stack,
         if seqs.endtype=='DT':
-            dcorr = - dangle3dG37[ps[:,0]] - dangle3dG37[ps.revcomp()[:,0]]
+            dcorr = - self.dangle3dG[ps[:,0]] - self.dangle3dG[ps.revcomp()[:,0]]
             if self.coaxparams:
-                dcorr += coaxddG37[ps[:,0]] + coaxddG37[ps.revcomp()[:,0]]
+                dcorr += self.coaxddG[ps[:,0]] + self.coaxddG[ps.revcomp()[:,0]]
         elif seqs.endtype=='TD':
-            dcorr = - dangle5dG37[ps[:,-1]] - dangle5dG37[ps.revcomp()[:,-1]]
+            dcorr = - self.dangle5dG[ps[:,-1]] - self.dangle5dG[ps.revcomp()[:,-1]]
             if self.coaxparams:
-                dcorr += coaxddG37[ps[:,-1]] + coaxddG37[ps.revcomp()[:,-1]]
-        return -(np.sum(nndG37[ps],axis=1) + initdG37 + dcorr)
+                dcorr += self.coaxddG[ps[:,-1]] + self.coaxddG[ps.revcomp()[:,-1]]
+        return -(np.sum(self.nndG[ps],axis=1) + self.initdG + dcorr)
 
     def uniform_loopmismatch(self, seqs1, seqs2):
         if seqs1.shape != seqs2.shape:
@@ -129,12 +136,12 @@ ends.
                                axis=1)
         en[:,plen-1] = en[:,plen-1] + self.nndG37_full[pa1,pac1] + self.nndG37_full[pa2,pac2]
         if endtype == 'DT':
-            en[:,plen-1] += (self.nndG37_full[pa1,pac1]>0)*(+ dangle3dG37[s1[:,0]] - self.coaxparams*coaxddG37[s1[:,0]]) \
-                        + (self.nndG37_full[pa2,pac2]>0)*(+ dangle3dG37[s2[:,0]] - self.coaxparams*coaxddG37[s2[:,0]]) # sign reversed
+            en[:,plen-1] += (self.nndG37_full[pa1,pac1]>0)*(+ self.dangle3dG[s1[:,0]] - self.coaxparams*self.coaxddG[s1[:,0]]) \
+                        + (self.nndG37_full[pa2,pac2]>0)*(+ self.dangle3dG[s2[:,0]] - self.coaxparams*self.coaxddG[s2[:,0]]) # sign reversed
         if endtype == 'TD':
-            en[:,plen-1] += + (self.nndG37_full[pa1,pac1]>0)*(dangle5dG37[s1[:,-1]] - self.coaxparams*coaxddG37[s1[:,-1]]) \
-                          + (self.nndG37_full[pa2,pac2]>0)*(dangle5dG37[s2[:,-1]] - self.coaxparams*coaxddG37[s2[:,-1]]) # sign reversed
-        return np.amax(en,1) - initdG37
+            en[:,plen-1] += + (self.nndG37_full[pa1,pac1]>0)*(self.dangle5dG[s1[:,-1]] - self.coaxparams*self.coaxddG[s1[:,-1]]) \
+                          + (self.nndG37_full[pa2,pac2]>0)*(self.dangle5dG[s2[:,-1]] - self.coaxparams*self.coaxddG[s2[:,-1]]) # sign reversed
+        return np.amax(en,1) - self.initdG
 
     def uniform_danglemismatch(self, seqs1,seqs2,fast=True):
         if seqs1.shape != seqs2.shape:
@@ -164,37 +171,37 @@ ends.
             s1l = np.hstack(( s1 , (4*(s1[:,-1]%4) + s2r[:,-1]%4).reshape(-1,1) ))
         for o in range(1,l-1):
             zn = l-1-o
-            m[:,z:z+zn] = ( s1c[:,:-o]==s2rc[:,o:] ) * -nndG37[s1c[:,:-o]] # - for positive sign
+            m[:,z:z+zn] = ( s1c[:,:-o]==s2rc[:,o:] ) * -self.nndG[s1c[:,:-o]] # - for positive sign
             if endtype == 'DT': # squish offset
-                m[:,z] += (m[:,z]!=0) * ( -nndG37[s1[:,0]] - tailcordG37 + dangle3dG37[s1[:,0]] ) # - for positive sign
-                m[:,z+zn-1] += (m[:,z+zn-1]!=0) * ( -nndG37[s2[:,0]] - tailcordG37 + dangle3dG37[s2[:,0]] ) # - for positive sign
+                m[:,z] += (m[:,z]!=0) * ( -self.nndG[s1[:,0]] - tailcordG37 + self.dangle3dG[s1[:,0]] ) # - for positive sign
+                m[:,z+zn-1] += (m[:,z+zn-1]!=0) * ( -self.nndG[s2[:,0]] - tailcordG37 + self.dangle3dG[s2[:,0]] ) # - for positive sign
             if endtype == 'TD': # stretch offset
-                m[:,z] += (m[:,z]!=0) * ( -dangle3dG37[s1c[:,-o]] ) # - for positive sign
-                m[:,z+zn-1] += (m[:,z+zn-1]!=0) * ( -dangle3dG37[s2[:,-o-1]] ) # - for positive sign
+                m[:,z] += (m[:,z]!=0) * ( -self.dangle3dG[s1c[:,-o]] ) # - for positive sign
+                m[:,z+zn-1] += (m[:,z+zn-1]!=0) * ( -self.dangle3dG[s2[:,-o-1]] ) # - for positive sign
             z = z+zn+2
-            m[:,z:z+zn] = ( s2rc[:,:-o]==s1c[:,o:] ) * -nndG37[s2rc[:,:-o]] # - for positive sign
+            m[:,z:z+zn] = ( s2rc[:,:-o]==s1c[:,o:] ) * -self.nndG[s2rc[:,:-o]] # - for positive sign
             if endtype == 'DT': # stretch offset
-                m[:,z] += (m[:,z]!=0) * ( -dangle5dG37[s1c[:,o-1]] ) # - for positive sign
-                m[:,z+zn-1] += (m[:,z+zn-1]!=0) * ( -dangle5dG37[s2[:,o]]) # - for positive sign
+                m[:,z] += (m[:,z]!=0) * ( -self.dangle5dG[s1c[:,o-1]] ) # - for positive sign
+                m[:,z+zn-1] += (m[:,z+zn-1]!=0) * ( -self.dangle5dG[s2[:,o]]) # - for positive sign
             if endtype == 'TD': # squish offset
-                m[:,z] += (m[:,z]!=0) * ( -nndG37[s1[:,-1]] - tailcordG37 +dangle5dG37[s1[:,-1]] ) # - for positive sign
-                m[:,z+zn-1] += (m[:,z+zn-1]!=0) * ( -nndG37[s2[:,-1]] - tailcordG37 + dangle5dG37[s2[:,-1]]) # - for positive sign
+                m[:,z] += (m[:,z]!=0) * ( -self.nndG[s1[:,-1]] - tailcordG37 +self.dangle5dG[s1[:,-1]] ) # - for positive sign
+                m[:,z+zn-1] += (m[:,z+zn-1]!=0) * ( -self.nndG[s2[:,-1]] - tailcordG37 + self.dangle5dG[s2[:,-1]]) # - for positive sign
             z = z+zn+2
         # The zero shift case
-        m[:,z:z+l+1] = - ( (s1l == s2rl) * nndG37[s1l] )# - for positive sign
+        m[:,z:z+l+1] = - ( (s1l == s2rl) * self.nndG[s1l] )# - for positive sign
         if endtype == 'DT':
-            m[:,z] += (m[:,z]!=0)*(+ dangle3dG37[s1[:,0]] - self.coaxparams*coaxddG37[s1[:,0]]) # sign reversed
-            m[:,z+l] += (m[:,z+l]!=0)*(+ dangle3dG37[s2[:,0]] - self.coaxparams*coaxddG37[s2[:,0]]) # sign reversed
+            m[:,z] += (m[:,z]!=0)*(+ self.dangle3dG[s1[:,0]] - self.coaxparams*self.coaxddG[s1[:,0]]) # sign reversed
+            m[:,z+l] += (m[:,z+l]!=0)*(+ self.dangle3dG[s2[:,0]] - self.coaxparams*self.coaxddG[s2[:,0]]) # sign reversed
         if endtype == 'TD':
-            m[:,z] += + (m[:,z]!=0)*(dangle5dG37[s1[:,-1]] - self.coaxparams*coaxddG37[s1[:,-1]]) # sign reversed
-            m[:,z+l] += + (m[:,z+l]!=0)*(dangle5dG37[s2[:,-1]] - self.coaxparams*coaxddG37[s2[:,-1]]) # sign reversed
+            m[:,z] += + (m[:,z]!=0)*(self.dangle5dG[s1[:,-1]] - self.coaxparams*self.coaxddG[s1[:,-1]]) # sign reversed
+            m[:,z+l] += + (m[:,z+l]!=0)*(self.dangle5dG[s2[:,-1]] - self.coaxparams*self.coaxddG[s2[:,-1]]) # sign reversed
         i = 0
         im = len(m)
         from ._stickyext import fastsub
         x = m
         fastsub(x,r)
 
-        return r-initdG37
+        return r-self.initdG
 
     def _other_uniform_loopmismatch(self, seqs1, seqs2):
         if seqs1.shape != seqs2.shape:
@@ -240,12 +247,12 @@ ends.
 
             # Any match at 0 or -1 needs to be adjusted by dangle and possibly coax.
             # Otherwise, we just take the dG values
-            e = nndG37[m]
-            dcorr1 = - dangle3dG37[s1[:,0]]
-            dcorr2 = - dangle3dG37[seqs2[:,0]*4+seqs2[:,1]]
+            e = self.nndG[m]
+            dcorr1 = - self.dangle3dG[s1[:,0]]
+            dcorr2 = - self.dangle3dG[seqs2[:,0]*4+seqs2[:,1]]
             if self.coaxparams:
-                dcorr1 += coaxddG37[s1[:,0]]
-                dcorr2 += coaxddG37[seqs2[:,0]*4+seqs2[:,1]]
+                dcorr1 += self.coaxddG[s1[:,0]]
+                dcorr2 += self.coaxddG[seqs2[:,0]*4+seqs2[:,1]]
             e[:,0] = m[:,0]*dcorr1
             e[:,-1] += m[:,0]*dcorr2
             
