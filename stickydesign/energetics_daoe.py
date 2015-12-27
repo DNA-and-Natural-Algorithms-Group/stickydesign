@@ -38,6 +38,7 @@ dangle3dS = ( dangle3dH - dangle3dG37 ) / 310.15
 initdG37 = 1.96
 initdS = 0.0057
 tailcordG37 = 0.8
+looppenalty = 3.6
 
 class energetics_daoe(object):
     """
@@ -80,6 +81,19 @@ ends.
         self.dangle5dG = dangle5dG37 - (temperature-37)*dangle5dS
         self.dangle3dG = dangle3dG37 - (temperature-37)*dangle3dS
 
+        self.ltmmdG_5335 = np.zeros(256)
+        self.rtmmdG_5335 = np.zeros(256)
+        self.intmmdG_5335 = np.zeros(256)
+
+        # Dumb setup. FIXME: do this cleverly
+        for i in range(0,4):
+            for j in range(0,4):
+                for k in range(0,4):
+                        self.ltmmdG_5335[i*64+j*16+k*4+j] = self.dangle5dG[i*4+j]+self.dangle3dG[(3-j)*4+(3-k)]
+                        self.rtmmdG_5335[i*64+j*16+i*4+k] = self.dangle3dG[i*4+j]+self.dangle5dG[(3-k)*4+(3-i)]
+                        self.intmmdG_5335[i*64+j*16+k*4+j] = self.intmmdG[(3-j)*16+(3-k)*4+i]
+                        self.intmmdG_5335[i*64+j*16+i*4+k] = self.intmmdG[i*16+j*4+(3-k)]
+                        
 
     def matching_uniform(self, seqs):
         ps = pairseqa(seqs)
@@ -135,6 +149,7 @@ ends.
                                ps2[:,max(-shift,0):plen-shift] ], \
                                axis=1)
         en[:,plen-1] = en[:,plen-1] + self.nndG37_full[pa1,pac1] + self.nndG37_full[pa2,pac2]
+        print en
         if endtype == 'DT':
             en[:,plen-1] += (self.nndG37_full[pa1,pac1]>0)*(+ self.dangle3dG[s1[:,0]] - self.coaxparams*self.coaxddG[s1[:,0]]) \
                         + (self.nndG37_full[pa2,pac2]>0)*(+ self.dangle3dG[s2[:,0]] - self.coaxparams*self.coaxddG[s2[:,0]]) # sign reversed
@@ -197,11 +212,117 @@ ends.
             m[:,z+l] += + (m[:,z+l]!=0)*(self.dangle5dG[s2[:,-1]] - self.coaxparams*self.coaxddG[s2[:,-1]]) # sign reversed
         i = 0
         im = len(m)
+        print m
         from ._stickyext import fastsub
         x = m
         fastsub(x,r)
 
         return r-self.initdG
+    
+    def uniform_newmismatch(self, seqs1, seqs2):
+        if seqs1.shape != seqs2.shape:
+            if seqs1.ndim == 1:
+                seqs1 = endarray( np.repeat(np.array([seqs1]),seqs2.shape[0],0), seqs1.endtype )
+            else:
+                raise InputError("Lengths of sequence arrays are not acceptable.")
+        
+        assert seqs1.endtype == seqs2.endtype
+        endtype = seqs1.endtype
+        
+
+        s1 = tops(seqs1)
+        s2 = tops(seqs2)
+        l = s1.shape[1]
+        
+        # s2r is revcomp pairseq of s2.
+        s2r = np.fliplr(np.invert(s2)%16)
+        s2r = s2r//4 + 4*(s2r%4)
+        
+        alloffset_max = np.zeros(s1.shape[0]) # store for max binding at any offset
+
+        if endtype == 'TD':
+            s1_end = s1[:,0:-1] # 
+            s2_end_rc = s2r[:,1:]
+            s1l = np.hstack(( (4*(s2r[:,0]//4) + s1[:,0]//4).reshape(-1,1) , s1 ))
+            s2rl = np.hstack(( s2r , (4*(s2r[:,-1]%4) + s1[:,-1]%4).reshape(-1,1) ))
+        elif endtype == 'DT':
+            s1_end = s1[:,1:]
+            s2_end_rc = s2r[:,0:-1]
+            s2rl = np.hstack(( (4*(s1[:,0]//4) + s2r[:,0]//4).reshape(-1,1) , s2r ))
+            s1l = np.hstack(( s1 , (4*(s1[:,-1]%4) + s2r[:,-1]%4).reshape(-1,1) ))
+
+        for offset in range(-l+2,l-1): 
+            if offset > 0:
+                if endtype == 'TD':
+                    # Energies of matching stacks, zero otherwise. Can be used to check match.
+                    ens = (s1_end[:,:-offset]==s2_end_rc[:,offset:]) * (-self.nndG[s1_end[:,:-offset]])
+                    ens[:,0] += (ens[:,0]!=0) * ( -self.dangle3dG[s1_end[:,-offset]] ) # - for positive sign
+                    ens[:,-1] += (ens[:,-1]!=0) * ( -self.dangle3dG[s2[:,-offset-1]] ) # - for positive sign
+                    ltmm = self.ltmmdG_5335[_s1_end[:,:-offset]*16+s2_end_rc[:,offset:]]
+                    rtmm = self.rtmmdG_5335[s1_end[:,:-offset]*16+s2_end_rc[:,offset:]]
+                    intmm = self.intmmdG_5335[s1_end[:,:-offset]*16+s2_end_rc[:,offset:]]
+                if endtype == 'DT':
+                    ens = (s1_end[:,offset:]==s2_end_rc[:,:-offset]) * (-self.nndG[s1_end[:,offset:]])
+                    ens[:,0] += (ens[:,0]!=0) * ( -self.dangle5dG[s1_end[:,offset-1]] ) # - for positive sign
+                    ens[:,-1] += (ens[:,-1]!=0) * ( -self.dangle5dG[s2[:,offset]]) # - for positive sign
+                    ltmm = self.ltmmdG_5335[s1_end[:,offset:]*16+s2_end_rc[:,:-offset]]
+                    rtmm = self.rtmmdG_5335[s1_end[:,offset:]*16+s2_end_rc[:,:-offset]]
+                    intmm = self.intmmdG_5335[s1_end[:,offset:]*16+s2_end_rc[:,:-offset]]
+            elif offset == 0:
+                ens = (s1l==s2rl) * (-self.nndG[s1l])
+                if endtype == 'DT':
+                    ens[:,0] += (ens[:,0]!=0)*(+ self.dangle3dG[s1[:,0]] - self.coaxparams*self.coaxddG[s1[:,0]]) # sign reversed
+                    ens[:,-1] += (ens[:,-1]!=0)*(+ self.dangle3dG[s2[:,0]] - self.coaxparams*self.coaxddG[s2[:,0]]) # sign reversed
+                if endtype == 'TD':
+                    ens[:,0] += + (ens[:,0]!=0)*(self.dangle5dG[s1[:,-1]] - self.coaxparams*self.coaxddG[s1[:,-1]]) # sign reversed
+                    ens[:,-1] += + (ens[:,-1]!=0)*(self.dangle5dG[s2[:,-1]] - self.coaxparams*self.coaxddG[s2[:,-1]]) # sign reversed
+                ltmm = self.ltmmdG_5335[s1_end[:,:]*16+s2_end_rc[:,:]]
+                rtmm = self.rtmmdG_5335[s1_end[:,:]*16+s2_end_rc[:,:]]
+                intmm = self.intmmdG_5335[s1_end[:,:]*16+s2_end_rc[:,:]]
+            else: # offset < 0
+                if endtype == 'TD':
+                    ens = (s1_end[:,-offset:]==s2_end_rc[:,:offset]) * (-self.nndG[s1_end[:,-offset:]])
+                    ens[:,0] += (ens[:,0]!=0) * ( -self.nndG[s1[:,-1]] - tailcordG37 +self.dangle5dG[s1[:,-1]] ) # - for positive sign
+                    ens[:,-1] += (ens[:,-1]!=0) * ( -self.nndG[s2[:,-1]] - tailcordG37 + self.dangle5dG[s2[:,-1]]) # - for positive sign
+                    ltmm = self.ltmmdG_5335[s1_end[:,-offset:]*16+s2_end_rc[:,:offset]]
+                    rtmm = self.rtmmdG_5335[s1_end[:,-offset:]*16+s2_end_rc[:,:offset]]
+                    intmm = self.intmmdG_5335[s1_end[:,-offset:]*16+s2_end_rc[:,:offset]]
+                elif endtype == 'DT':
+                    ens = (s1_end[:,:offset]==s2_end_rc[:,-offset:]) * (-self.nndG[s1_end[:,:offset]])
+                    ens[:,0] += (ens[:,0]!=0) * ( -self.nndG[s1[:,0]] - tailcordG37 + self.dangle3dG[s1[:,0]] ) # - for positive sign
+                    ens[:,-1] += (ens[:,-1]!=0) * ( -self.nndG[s2[:,0]] - tailcordG37 + self.dangle3dG[s2[:,0]] ) # - for positive sign
+                    ltmm = self.ltmmdG_5335[_s1_end[:,:offset]*16+s2_end_rc[:,-offset:]]
+                    rtmm = self.rtmmdG_5335[s1_end[:,:offset]*16+s2_end_rc[:,-offset:]]
+                    intmm = self.intmmdG_5335[s1_end[:,:offset]*16+s2_end_rc[:,-offset:]]
+            bindmax = np.zeros(ens.shape[0])
+            for e in range(0,ens.shape[0]):
+                acc = 0
+                for i in range(0,ens.shape[1]):
+                    if ens[e,i] != 0: 
+                        # we're matching. add the pair to the accumulator
+                        acc += ens[e,i]
+                    elif rtmm[e,i] != 0: 
+                        # we're mismatching on the right: see if right-dangling is highest
+                        # binding so far, and continue, adding intmm to accumulator.
+                        if acc + rtmm[e,i] > bindmax[e]:
+                            bindmax[e] = acc + rtmm[e,i]
+                        acc += intmm[e,i]
+                    elif ltmm[e,i] != 0 and i < ens.shape[1]-1: # don't do this for the last pair
+                        # we're mismatching on the left: see if our ltmm is stronger than
+                        # our accumulated binding+intmm. If so, reset to ltmm and continue as
+                        # left-dangling, or reset to 0 if ltmm+next is weaker than next dangle,
+                        # or next is also a mismatch (fixme: good idea?). If not, continue as internal
+                        # mismatch.
+                        if ltmm[e,i] > acc+intmm[e,i] and ens[e,i+1] > 0:
+                            acc = ltmm[e,i]
+                        else:
+                            acc += intmm[e,i]
+                    else: # we're at a loop. Add stuff.
+                        acc -= looppenalty
+                bindmax[e] = max(bindmax[e],acc)
+            alloffset_max = np.maximum(alloffset_max,bindmax)
+        return alloffset_max - self.initdG
+
 
     def _other_uniform_loopmismatch(self, seqs1, seqs2):
         if seqs1.shape != seqs2.shape:
