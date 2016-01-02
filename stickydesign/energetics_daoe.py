@@ -33,6 +33,23 @@ dangle3dH = np.array([      -0.5,  4.7, -4.1, -3.8,
                             -5.9, -2.6, -3.2, -5.2,
                             -2.1, -0.2, -3.9, -4.4,
                             -0.7,  4.4, -1.6,  2.9])
+intmmdG = np.array([ 0.61, 0.88, 0.14, 0.00, # ij
+                     0.77, 1.33, 0.00, 0.64, # *k
+                     0.02, 0.00,-0.13, 0.71,
+                     0.00, 0.73, 0.07, 0.69,
+                     0.43, 0.75, 0.03, 0.00,
+                     0.79, 0.70, 0.00, 0.62,
+                     0.11, 0.00,-0.11,-0.47,
+                     0.00, 0.40,-0.32,-0.12,
+                     0.17, 0.81,-0.25, 0.00,
+                     0.47, 0.79, 0.00, 0.62,
+                    -0.52, 0.00,-1.11, 0.08,
+                     0.00, 0.98,-0.59, 0.45,
+                     0.69, 0.92, 0.42, 0.00,
+                     1.33, 1.05, 0.00, 0.97,
+                     0.74, 0.00, 0.44, 0.43,
+                     0.00, 0.75, 0.34, 0.68 ])
+
 dangle5dS = ( dangle5dH - dangle5dG37 ) / 310.15
 dangle3dS = ( dangle3dH - dangle3dG37 ) / 310.15
 initdG37 = 1.96
@@ -82,6 +99,7 @@ ends.
         self.coaxddG = coaxddG37 - (temperature-37)*coaxddG37
         self.dangle5dG = dangle5dG37 - (temperature-37)*dangle5dS
         self.dangle3dG = dangle3dG37 - (temperature-37)*dangle3dS
+        self.intmmdG = intmmdG # not tempadj FIXME
 
         self.ltmmdG_5335 = np.zeros(256)
         self.rtmmdG_5335 = np.zeros(256)
@@ -93,8 +111,8 @@ ends.
                 for k in range(0,4):
                         self.ltmmdG_5335[i*64+j*16+k*4+j] = self.dangle5dG[i*4+j]+self.dangle3dG[(3-j)*4+(3-k)]
                         self.rtmmdG_5335[i*64+j*16+i*4+k] = self.dangle3dG[i*4+j]+self.dangle5dG[(3-k)*4+(3-i)]
-                        self.intmmdG_5335[i*64+j*16+k*4+j] = 0.01 #self.intmmdG[(3-j)*16+(3-k)*4+i]
-                        self.intmmdG_5335[i*64+j*16+i*4+k] = 0.01 #self.intmmdG[i*16+j*4+(3-k)]
+                        self.intmmdG_5335[i*64+j*16+k*4+j] = self.intmmdG[(3-j)*16+(3-k)*4+i] # not tempadj FIXME
+                        self.intmmdG_5335[i*64+j*16+i*4+k] = self.intmmdG[i*16+j*4+(3-k)] # not tempadj FIXME
                         
 
     def matching_uniform(self, seqs):
