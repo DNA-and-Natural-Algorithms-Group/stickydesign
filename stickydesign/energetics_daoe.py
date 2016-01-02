@@ -71,6 +71,8 @@ ends.
             self.uniform = self.uniform_loopmismatch
         elif mismatchtype == 'dangle':
             self.uniform = self.uniform_danglemismatch
+        elif mismatchtype == 'new':
+            self.uniform = self.uniform_newmismatch
         else:
             raise InputError("Mismatchtype {0} is not supported.".format(mismatchtype))
 
@@ -91,8 +93,8 @@ ends.
                 for k in range(0,4):
                         self.ltmmdG_5335[i*64+j*16+k*4+j] = self.dangle5dG[i*4+j]+self.dangle3dG[(3-j)*4+(3-k)]
                         self.rtmmdG_5335[i*64+j*16+i*4+k] = self.dangle3dG[i*4+j]+self.dangle5dG[(3-k)*4+(3-i)]
-                        self.intmmdG_5335[i*64+j*16+k*4+j] = self.intmmdG[(3-j)*16+(3-k)*4+i]
-                        self.intmmdG_5335[i*64+j*16+i*4+k] = self.intmmdG[i*16+j*4+(3-k)]
+                        self.intmmdG_5335[i*64+j*16+k*4+j] = 0.01 #self.intmmdG[(3-j)*16+(3-k)*4+i]
+                        self.intmmdG_5335[i*64+j*16+i*4+k] = 0.01 #self.intmmdG[i*16+j*4+(3-k)]
                         
 
     def matching_uniform(self, seqs):
@@ -149,7 +151,6 @@ ends.
                                ps2[:,max(-shift,0):plen-shift] ], \
                                axis=1)
         en[:,plen-1] = en[:,plen-1] + self.nndG37_full[pa1,pac1] + self.nndG37_full[pa2,pac2]
-        print en
         if endtype == 'DT':
             en[:,plen-1] += (self.nndG37_full[pa1,pac1]>0)*(+ self.dangle3dG[s1[:,0]] - self.coaxparams*self.coaxddG[s1[:,0]]) \
                         + (self.nndG37_full[pa2,pac2]>0)*(+ self.dangle3dG[s2[:,0]] - self.coaxparams*self.coaxddG[s2[:,0]]) # sign reversed
@@ -212,14 +213,13 @@ ends.
             m[:,z+l] += + (m[:,z+l]!=0)*(self.dangle5dG[s2[:,-1]] - self.coaxparams*self.coaxddG[s2[:,-1]]) # sign reversed
         i = 0
         im = len(m)
-        print m
         from ._stickyext import fastsub
         x = m
         fastsub(x,r)
 
         return r-self.initdG
     
-    def uniform_newmismatch(self, seqs1, seqs2):
+    def uniform_newmismatch(self, seqs1, seqs2, debug=False):
         if seqs1.shape != seqs2.shape:
             if seqs1.ndim == 1:
                 seqs1 = endarray( np.repeat(np.array([seqs1]),seqs2.shape[0],0), seqs1.endtype )
@@ -258,16 +258,16 @@ ends.
                     ens = (s1_end[:,:-offset]==s2_end_rc[:,offset:]) * (-self.nndG[s1_end[:,:-offset]])
                     ens[:,0] += (ens[:,0]!=0) * ( -self.dangle3dG[s1_end[:,-offset]] ) # - for positive sign
                     ens[:,-1] += (ens[:,-1]!=0) * ( -self.dangle3dG[s2[:,-offset-1]] ) # - for positive sign
-                    ltmm = self.ltmmdG_5335[_s1_end[:,:-offset]*16+s2_end_rc[:,offset:]]
-                    rtmm = self.rtmmdG_5335[s1_end[:,:-offset]*16+s2_end_rc[:,offset:]]
-                    intmm = self.intmmdG_5335[s1_end[:,:-offset]*16+s2_end_rc[:,offset:]]
+                    ltmm = -self.ltmmdG_5335[s1_end[:,:-offset]*16+s2_end_rc[:,offset:]]
+                    rtmm = -self.rtmmdG_5335[s1_end[:,:-offset]*16+s2_end_rc[:,offset:]]
+                    intmm = -self.intmmdG_5335[s1_end[:,:-offset]*16+s2_end_rc[:,offset:]]
                 if endtype == 'DT':
                     ens = (s1_end[:,offset:]==s2_end_rc[:,:-offset]) * (-self.nndG[s1_end[:,offset:]])
                     ens[:,0] += (ens[:,0]!=0) * ( -self.dangle5dG[s1_end[:,offset-1]] ) # - for positive sign
                     ens[:,-1] += (ens[:,-1]!=0) * ( -self.dangle5dG[s2[:,offset]]) # - for positive sign
-                    ltmm = self.ltmmdG_5335[s1_end[:,offset:]*16+s2_end_rc[:,:-offset]]
-                    rtmm = self.rtmmdG_5335[s1_end[:,offset:]*16+s2_end_rc[:,:-offset]]
-                    intmm = self.intmmdG_5335[s1_end[:,offset:]*16+s2_end_rc[:,:-offset]]
+                    ltmm = -self.ltmmdG_5335[s1_end[:,offset:]*16+s2_end_rc[:,:-offset]]
+                    rtmm = -self.rtmmdG_5335[s1_end[:,offset:]*16+s2_end_rc[:,:-offset]]
+                    intmm = -self.intmmdG_5335[s1_end[:,offset:]*16+s2_end_rc[:,:-offset]]
             elif offset == 0:
                 ens = (s1l==s2rl) * (-self.nndG[s1l])
                 if endtype == 'DT':
@@ -276,25 +276,29 @@ ends.
                 if endtype == 'TD':
                     ens[:,0] += + (ens[:,0]!=0)*(self.dangle5dG[s1[:,-1]] - self.coaxparams*self.coaxddG[s1[:,-1]]) # sign reversed
                     ens[:,-1] += + (ens[:,-1]!=0)*(self.dangle5dG[s2[:,-1]] - self.coaxparams*self.coaxddG[s2[:,-1]]) # sign reversed
-                ltmm = self.ltmmdG_5335[s1_end[:,:]*16+s2_end_rc[:,:]]
-                rtmm = self.rtmmdG_5335[s1_end[:,:]*16+s2_end_rc[:,:]]
-                intmm = self.intmmdG_5335[s1_end[:,:]*16+s2_end_rc[:,:]]
+                ltmm = np.zeros_like(ens)
+                rtmm = np.zeros_like(ens)
+                intmm = np.zeros_like(ens)
+                ltmm[:,1:-1] = -self.ltmmdG_5335[s1_end[:,:]*16+s2_end_rc[:,:]]
+                rtmm[:,1:-1] = -self.rtmmdG_5335[s1_end[:,:]*16+s2_end_rc[:,:]]
+                intmm[:,1:-1] = -self.intmmdG_5335[s1_end[:,:]*16+s2_end_rc[:,:]]
             else: # offset < 0
                 if endtype == 'TD':
                     ens = (s1_end[:,-offset:]==s2_end_rc[:,:offset]) * (-self.nndG[s1_end[:,-offset:]])
                     ens[:,0] += (ens[:,0]!=0) * ( -self.nndG[s1[:,-1]] - tailcordG37 +self.dangle5dG[s1[:,-1]] ) # - for positive sign
                     ens[:,-1] += (ens[:,-1]!=0) * ( -self.nndG[s2[:,-1]] - tailcordG37 + self.dangle5dG[s2[:,-1]]) # - for positive sign
-                    ltmm = self.ltmmdG_5335[s1_end[:,-offset:]*16+s2_end_rc[:,:offset]]
-                    rtmm = self.rtmmdG_5335[s1_end[:,-offset:]*16+s2_end_rc[:,:offset]]
-                    intmm = self.intmmdG_5335[s1_end[:,-offset:]*16+s2_end_rc[:,:offset]]
+                    ltmm = -self.ltmmdG_5335[s1_end[:,-offset:]*16+s2_end_rc[:,:offset]]
+                    rtmm = -self.rtmmdG_5335[s1_end[:,-offset:]*16+s2_end_rc[:,:offset]]
+                    intmm = -self.intmmdG_5335[s1_end[:,-offset:]*16+s2_end_rc[:,:offset]]
                 elif endtype == 'DT':
                     ens = (s1_end[:,:offset]==s2_end_rc[:,-offset:]) * (-self.nndG[s1_end[:,:offset]])
                     ens[:,0] += (ens[:,0]!=0) * ( -self.nndG[s1[:,0]] - tailcordG37 + self.dangle3dG[s1[:,0]] ) # - for positive sign
                     ens[:,-1] += (ens[:,-1]!=0) * ( -self.nndG[s2[:,0]] - tailcordG37 + self.dangle3dG[s2[:,0]] ) # - for positive sign
-                    ltmm = self.ltmmdG_5335[_s1_end[:,:offset]*16+s2_end_rc[:,-offset:]]
-                    rtmm = self.rtmmdG_5335[s1_end[:,:offset]*16+s2_end_rc[:,-offset:]]
-                    intmm = self.intmmdG_5335[s1_end[:,:offset]*16+s2_end_rc[:,-offset:]]
+                    ltmm = -self.ltmmdG_5335[s1_end[:,:offset]*16+s2_end_rc[:,-offset:]]
+                    rtmm = -self.rtmmdG_5335[s1_end[:,:offset]*16+s2_end_rc[:,-offset:]]
+                    intmm = -self.intmmdG_5335[s1_end[:,:offset]*16+s2_end_rc[:,-offset:]]
             bindmax = np.zeros(ens.shape[0])
+            if debug: print offset, ens.view(np.ndarray), ltmm, rtmm, intmm
             for e in range(0,ens.shape[0]):
                 acc = 0
                 for i in range(0,ens.shape[1]):

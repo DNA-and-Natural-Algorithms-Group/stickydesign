@@ -5,10 +5,10 @@ import numpy as np
 
 class test_energetics_daoe():
     def setup(self):
-        r5dt = endarray(np.random.randint(low=0,high=4,size=(100,7)),'DT')
-        r5td = endarray(np.random.randint(low=0,high=4,size=(100,7)),'TD')
-        r10dt = endarray(np.random.randint(low=0,high=4,size=(100,12)),'DT')
-        r10td = endarray(np.random.randint(low=0,high=4,size=(100,12)),'TD')
+        r5dt = endarray(np.random.randint(low=0,high=4,size=(10,7)),'DT')
+        r5td = endarray(np.random.randint(low=0,high=4,size=(10,7)),'TD')
+        r10dt = endarray(np.random.randint(low=0,high=4,size=(10,12)),'DT')
+        r10td = endarray(np.random.randint(low=0,high=4,size=(10,12)),'TD')
         self.sets = [r5dt,r5td,r10dt,r10td]
         self.en = energetics_daoe.energetics_daoe()
 
@@ -19,7 +19,13 @@ class test_energetics_daoe():
             r3 = self.en.uniform_danglemismatch(s.ends,s.comps)
             print(repr(s))
             np.testing.assert_array_almost_equal(r1,r2)
-            np.testing.assert_array_almost_equal(r1,r3)
+    
+    def test_matching_energies_match_new(self):
+        for s in self.sets:
+            r1 = self.en.matching_uniform(s)
+            r2 = self.en.uniform_newmismatch(s.ends,s.comps)
+            print(repr(s))
+            np.testing.assert_array_almost_equal(r1,r2)
 
 class test_energetics():
     def setup(self):
