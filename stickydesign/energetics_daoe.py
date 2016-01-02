@@ -269,19 +269,19 @@ ends.
                     rtmm = -self.rtmmdG_5335[s1_end[:,offset:]*16+s2_end_rc[:,:-offset]]
                     intmm = -self.intmmdG_5335[s1_end[:,offset:]*16+s2_end_rc[:,:-offset]]
             elif offset == 0:
-                ens = (s1l==s2rl) * (-self.nndG[s1l])
+                ens = (s1_end==s2_end_rc) * (-self.nndG[s1_end])
                 if endtype == 'DT':
-                    ens[:,0] += (ens[:,0]!=0)*(+ self.dangle3dG[s1[:,0]] - self.coaxparams*self.coaxddG[s1[:,0]]) # sign reversed
-                    ens[:,-1] += (ens[:,-1]!=0)*(+ self.dangle3dG[s2[:,0]] - self.coaxparams*self.coaxddG[s2[:,0]]) # sign reversed
+                    ens[:,0] += (ens[:,0]!=0)*(+ self.dangle3dG[s1[:,0]] - self.coaxparams*self.coaxddG[s1[:,0]]) - (s1l[:,0]==s2rl[:,0])*self.nndG[s1l[:,0]] # sign reversed
+                    ens[:,-1] += (ens[:,-1]!=0)*(+ self.dangle3dG[s2[:,0]] - self.coaxparams*self.coaxddG[s2[:,0]]) - (s1l[:,-1]==s2rl[:,-1])*self.nndG[s1l[:,-1]] # sign reversed
                 if endtype == 'TD':
-                    ens[:,0] += + (ens[:,0]!=0)*(self.dangle5dG[s1[:,-1]] - self.coaxparams*self.coaxddG[s1[:,-1]]) # sign reversed
-                    ens[:,-1] += + (ens[:,-1]!=0)*(self.dangle5dG[s2[:,-1]] - self.coaxparams*self.coaxddG[s2[:,-1]]) # sign reversed
+                    ens[:,0] += + (ens[:,0]!=0)*(self.dangle5dG[s1[:,-1]] - self.coaxparams*self.coaxddG[s1[:,-1]]) - (s1l[:,0]==s2rl[:,0])*self.nndG[s1l[:,0]] # sign reversed
+                    ens[:,-1] += + (ens[:,-1]!=0)*(self.dangle5dG[s2[:,-1]] - self.coaxparams*self.coaxddG[s2[:,-1]]) - (s1l[:,-1]==s2rl[:,-1])*self.nndG[s1l[:,-1]] # sign reversed
                 ltmm = np.zeros_like(ens)
                 rtmm = np.zeros_like(ens)
                 intmm = np.zeros_like(ens)
-                ltmm[:,1:-1] = -self.ltmmdG_5335[s1_end[:,:]*16+s2_end_rc[:,:]]
-                rtmm[:,1:-1] = -self.rtmmdG_5335[s1_end[:,:]*16+s2_end_rc[:,:]]
-                intmm[:,1:-1] = -self.intmmdG_5335[s1_end[:,:]*16+s2_end_rc[:,:]]
+                ltmm = -self.ltmmdG_5335[s1_end[:,:]*16+s2_end_rc[:,:]]
+                rtmm = -self.rtmmdG_5335[s1_end[:,:]*16+s2_end_rc[:,:]]
+                intmm = -self.intmmdG_5335[s1_end[:,:]*16+s2_end_rc[:,:]]
             else: # offset < 0
                 if endtype == 'TD':
                     ens = (s1_end[:,-offset:]==s2_end_rc[:,:offset]) * (-self.nndG[s1_end[:,-offset:]])

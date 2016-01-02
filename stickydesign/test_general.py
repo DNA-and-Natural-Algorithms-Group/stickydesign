@@ -5,10 +5,10 @@ import numpy as np
 
 class test_energetics_daoe():
     def setup(self):
-        r5dt = endarray(np.random.randint(low=0,high=4,size=(10,7)),'DT')
-        r5td = endarray(np.random.randint(low=0,high=4,size=(10,7)),'TD')
-        r10dt = endarray(np.random.randint(low=0,high=4,size=(10,12)),'DT')
-        r10td = endarray(np.random.randint(low=0,high=4,size=(10,12)),'TD')
+        r5dt = endarray(np.random.randint(low=0,high=4,size=(100,7)),'DT')
+        r5td = endarray(np.random.randint(low=0,high=4,size=(100,7)),'TD')
+        r10dt = endarray(np.random.randint(low=0,high=4,size=(100,12)),'DT')
+        r10td = endarray(np.random.randint(low=0,high=4,size=(100,12)),'TD')
         self.sets = [r5dt,r5td,r10dt,r10td]
         self.en = energetics_daoe.energetics_daoe()
 
