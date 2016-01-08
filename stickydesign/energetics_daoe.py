@@ -63,8 +63,9 @@ Energy functions based on several sources, primarily SantaLucia's 2004 paper,
 along with handling of dangles, tails, and nicks specifically for DX tile sticky
 ends.
     """
-    def __init__(self, temperature=37, mismatchtype='max', coaxparams=False):
+    def __init__(self, temperature=37, mismatchtype='max', coaxparams=False, singlepair=False):
         self.coaxparams = coaxparams
+        self.singlepair = singlepair
         self.setup_params(temperature)
 
         import os
@@ -88,8 +89,8 @@ ends.
             self.uniform = self.uniform_loopmismatch
         elif mismatchtype == 'dangle':
             self.uniform = self.uniform_danglemismatch
-        elif mismatchtype == 'new':
-            self.uniform = self.uniform_newmismatch
+        elif mismatchtype == 'combined' or mismatchtype == 'new':
+            self.uniform = self.uniform_combinedmismatch
         else:
             raise InputError("Mismatchtype {0} is not supported.".format(mismatchtype))
 
@@ -237,7 +238,7 @@ ends.
 
         return r-self.initdG
     
-    def uniform_newmismatch(self, seqs1, seqs2, debug=False):
+    def uniform_combinedmismatch(self, seqs1, seqs2, debug=False):
         if seqs1.shape != seqs2.shape:
             if seqs1.ndim == 1:
                 seqs1 = endarray( np.repeat(np.array([seqs1]),seqs2.shape[0],0), seqs1.endtype )
@@ -335,7 +336,9 @@ ends.
                         # left-dangling, or reset to 0 if ltmm+next is weaker than next dangle,
                         # or next is also a mismatch (fixme: good idea?). If not, continue as internal
                         # mismatch.
-                        if ltmm[e,i] > acc+intmm[e,i] and ens[e,i+1] > 0:
+                        if (not self.singlepair) and (ltmm[e,i] > acc+intmm[e,i]) and (ens[e,i+1] > 0):
+                            acc = ltmm[e,i]
+                        elif (self.singlepair) and (ltmm[e,i] > acc+intmm[e,i]):
                             acc = ltmm[e,i]
                         else:
                             acc += intmm[e,i]

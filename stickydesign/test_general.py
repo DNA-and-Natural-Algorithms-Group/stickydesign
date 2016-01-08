@@ -20,10 +20,10 @@ class test_energetics_daoe():
             print(repr(s))
             np.testing.assert_array_almost_equal(r1,r2)
     
-    def test_matching_energies_match_new(self):
+    def test_matching_energies_match_combined(self):
         for s in self.sets:
             r1 = self.en.matching_uniform(s)
-            r2 = self.en.uniform_newmismatch(s.ends,s.comps)
+            r2 = self.en.uniform_combinedmismatch(s.ends,s.comps)
             print(repr(s))
             np.testing.assert_array_almost_equal(r1,r2)
 
