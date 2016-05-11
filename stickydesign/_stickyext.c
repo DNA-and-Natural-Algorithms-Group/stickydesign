@@ -52,6 +52,7 @@ static PyObject* fastsub(PyObject* self, PyObject* args) {
         *res = g;
         PyArray_ITER_NEXT(itr);
     }
+    Py_DECREF(itr);
     Py_RETURN_NONE;
     
 }
