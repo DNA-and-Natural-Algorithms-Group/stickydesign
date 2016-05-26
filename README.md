@@ -88,3 +88,4 @@ StickyDesign and related software is a project of the Winfree lab at Caltech[2].
 
 [1](http://ipython.org)
 [2](http://dna.caltech.edu)
+
