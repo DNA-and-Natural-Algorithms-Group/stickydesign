@@ -430,7 +430,7 @@ def easyends( endtype, endlength, number=0, interaction=None, fdev=0.05,\
 
 def easy_space( endtype, endlength, interaction=None, fdev=0.05,\
               maxspurious=0.5, maxendspurious=None, tries=1, oldends=[],\
-              adjs=['n','n'], energetics=None, alphabet='n', echoose=None, runnx=False ):
+              adjs=['n','n'], energetics=None, alphabet='n', echoose=None ):
     length = endlength
     if not energetics:
         efunc = energetics_santalucia(mismatchtype='max')
@@ -494,20 +494,8 @@ def easy_space( endtype, endlength, interaction=None, fdev=0.05,\
     zipendsnf = zip(availendsr.tolist(),availendst.tolist())
     zipends = [ zipendsnf[x] for x in np.flatnonzero(vals_tf) ]
 
-    if not runnx:
-        return zipends
+    return zipends
 
-    import networkx as nx
-    G = nx.Graph()
-    G.add_edges_from(zipends)
-
-    maxl = 0
-    for clique in nx.clique.find_cliques(G):
-        if len(clique) > maxl:
-            print("Found clique length {0}: {1}".format(len(clique),clique))
-            maxl = len(clique)
-            maxc = clique
-    return maxc
 
 def spacefilter_standard(desint, dev, maxself):
     """
@@ -528,6 +516,7 @@ def spacefilter_standard(desint, dev, maxself):
         i = np.flatnonzero( (selfselfenergies < maxself) & (compcompenergies < maxself) )
         return fullends[i]
     return spacefilter
+
 
 def endfilter_standard(maxspurious):
     """
@@ -553,7 +542,7 @@ def endfilter_standard(maxspurious):
                         len(availends), len(newends), order='F' )
         highspurious = np.amax( np.hstack( (endendspurious, compendspurious,
             endcompspurious, compcompspurious) ), 1 )
-        #pdb.set_trace()
+
         return availends[ highspurious < maxspurious ]
     return endfilter
 
@@ -584,7 +573,7 @@ def endfilter_standard_advanced(maxcompspurious,maxendspurious):
             compcompspurious) ), 1 )
         highcompspurious = np.amax( np.hstack( (compendspurious,
             endcompspurious) ), 1 )
-        #pdb.set_trace()
+
         return availends[ (highendspurious < maxendspurious) &
                 (highcompspurious < maxcompspurious) ]
     return endfilter
@@ -623,16 +612,3 @@ def endchooser_random():
 
 def tops(s):
     return 4*s[:,:-1]+s[:,1:]
-
-
-if __name__ == '__main__':
-    # OK, we're being run as a script, so let's deal with it.
-
-    # Right now this is very rudimentary
-
-    import sys
-    args = [ eval(x) for x in sys.argv[1:] ]
-
-    E = easyends( *args )
-
-    print(repr(E))
