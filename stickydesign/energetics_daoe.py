@@ -332,7 +332,7 @@ ends.
                     rtmm = -self.rtmmdG_5335[s1_end[:,:offset]*16+s2_end_rc[:,-offset:]]
                     intmm = -self.intmmdG_5335[s1_end[:,:offset]*16+s2_end_rc[:,-offset:]]
             bindmax = np.zeros(ens.shape[0])
-            if debug: print offset, ens.view(np.ndarray), ltmm, rtmm, intmm
+            if debug: print(offset, ens.view(np.ndarray), ltmm, rtmm, intmm)
             for e in range(0,ens.shape[0]):
                 acc = 0
                 for i in range(0,ens.shape[1]):
