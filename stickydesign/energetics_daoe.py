@@ -13,7 +13,7 @@ coaxdG37 = np.array([       -1.04, -2.04, -1.29, -1.27,
                             -0.78, -1.97, -1.44, -1.29,
                             -1.66, -2.70, -1.97, -2.04,
                             -0.12, -1.66, -0.78, -1.04])
-coaxdS = 0.0027/0.163 * coaxdG37 # from Zhang, 2009 supp info
+coaxdS = 0.0027 / (1-310.15*0.0027) * coaxdG37 # from Zhang, 2009 supp info
 coaxddS = coaxdS-nndS
 coaxddG37 = coaxdG37-nndG37 # correction term rather than absolute dG
 
@@ -112,7 +112,7 @@ ends.
     def setup_params( self, temperature=37 ):
         self.initdG = initdG37 - (temperature-37)*initdS
         self.nndG = nndG37 - (temperature-37)*nndS
-        self.coaxddG = coaxddG37 - (temperature-37)*coaxddG37
+        self.coaxddG = coaxddG37 - (temperature-37)*coaxddS
         self.dangle5dG = dangle5dG37 - (temperature-37)*dangle5dS
         self.dangle3dG = dangle3dG37 - (temperature-37)*dangle3dS
         self.intmmdG = intmmdG37 - (temperature-37)*intmmdS
