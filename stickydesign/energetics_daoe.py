@@ -4,18 +4,40 @@ import pkg_resources
 import numpy as np
 from .stickydesign import *
 
-nndG37 = np.array([-1.  , -1.44, -1.28, -0.88, -1.45, -1.84, -2.17, -1.28, -1.3 ,
-                    -2.24, -1.84, -1.44, -0.58, -1.3 , -1.45, -1.  ])
+# n.b.: All parameters arrays here are arranged to fit the binary representation
+# used in stickydesign.  A, C, G, and T are given values of 0,1,2,3, thus taking
+# up 2 bits, and these bits are then put in 5' to 3' order.  Thus, for example, 5
+# would correspond to 5'-CC-3', and 2 would correspond to 5'-AG-3'.
+
+# dG and dS parameters from SantaLucia, 2004.
+nndG37 = np.array([-1.  , -1.44, -1.28, -0.88,
+                   -1.45, -1.84, -2.17, -1.28,
+                   -1.3 , -2.24, -1.84, -1.44,
+                   -0.58, -1.3 , -1.45, -1.  ])
 nndS = np.array([-0.0213, -0.0224, -0.021 , -0.0204, -0.0227, -0.0199, -0.0272,
                     -0.021 , -0.0222, -0.0244, -0.0199, -0.0224, -0.0213, -0.0222,
                     -0.0227, -0.0213])
+
+# Coaxial stacking parameter dGs at 37 C are from Protozanova 2004
+# (doi:10.1016/j.jmb.2004.07.075), table 2.
 coaxdG37 = np.array([       -1.04, -2.04, -1.29, -1.27,
                             -0.78, -1.97, -1.44, -1.29,
                             -1.66, -2.70, -1.97, -2.04,
                             -0.12, -1.66, -0.78, -1.04])
-coaxdS = 0.0027 / (1-310.15*0.0027) * coaxdG37 # from Zhang, 2009 supp info
+# Coaxial stacking parameter dSs for Protozanova parameters are taken
+# from Zhang, 2009 supplementary information, which discusses this
+# formulaic approach.
+coaxdS = 0.0027 / (1-310.15*0.0027) * coaxdG37
 coaxddS = coaxdS-nndS
 coaxddG37 = coaxdG37-nndG37 # correction term rather than absolute dG
+
+# Coaxial stacking parameters from Peyret 2000. The nick here is on the
+# reverse complement strand.  The TT and AG values are averages.
+# These are currently unused.
+coax_peyret_dG37 = np.array([ -1.5, -1.9, -1.15, -2.2,
+                              -1.7, -2.6, -0.8, -2.4,
+                              -2.6, -3.3, -1.6, -3.0,
+                              -1.6, -2.9, -1.7, -2.55 ]) 
 
 dangle5dG37 = np.array([    -0.51, -0.96, -0.58, -0.5 , 
                             -0.42, -0.52, -0.34, -0.02, 
