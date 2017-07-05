@@ -24,12 +24,26 @@ coaxdG37 = np.array([       -1.04, -2.04, -1.29, -1.27,
                             -0.78, -1.97, -1.44, -1.29,
                             -1.66, -2.70, -1.97, -2.04,
                             -0.12, -1.66, -0.78, -1.04])
+
 # Coaxial stacking parameter dSs for Protozanova parameters are taken
 # from Zhang, 2009 supplementary information, which discusses this
 # formulaic approach.
 coaxdS = 0.0027 / (1-310.15*0.0027) * coaxdG37
 coaxddS = coaxdS-nndS
 coaxddG37 = coaxdG37-nndG37 # correction term rather than absolute dG
+
+# Coaxial stacking parameters from Pyshni, Ivanova 2002
+coax_pyshni_dG37 = np.array([ -1.22, -2.10, -1.19, -1.89,
+                              -1.20, -1.96, -1.17, -1.35,
+                              -1.46, -2.76, -1.25, -2.29,
+                              -0.85, -2.21, -1.06, -1.93 ])
+
+coax_pyshni_dS = 0.001 * np.array([-26.0, -30.1, -27.9, -29.0,
+                                   -33.8, -21.4, -14.9, -15.3,
+                                   -25.4, -35.6, -20.6, -35.6,
+                                   -28.2, -45.6, -31.7, -48.3])
+coax_pyshni_ddS = coax_pyshni_dS - nndS
+coax_pyshni_ddG37 = coax_pyshni_dG37 - nndG37
 
 # Coaxial stacking parameters from Peyret 2000. The nick here is on the
 # reverse complement strand.  The TT and AG values are averages.
@@ -38,6 +52,14 @@ coax_peyret_dG37 = np.array([ -1.5, -1.9, -1.15, -2.2,
                               -1.7, -2.6, -0.8, -2.4,
                               -2.6, -3.3, -1.6, -3.0,
                               -1.6, -2.9, -1.7, -2.55 ]) 
+
+coax_peyret_dS = 0.001 * np.array([ -44.7, -27.8, -(25.4+56.9)/2.0, -59.2,
+                                    -46.8, -52.0, -26.4, -33.5,
+                                    -48.5, -31.4, -20.6, -55.5,
+                                    -26.2, -34.1, -33.1, -(23.1+77.6)/2 ])
+
+coax_peyret_ddS = coax_peyret_dS - nndS
+coax_peyret_ddG37 = coax_peyret_dG37 - nndG37
 
 dangle5dG37 = np.array([    -0.51, -0.96, -0.58, -0.5 , 
                             -0.42, -0.52, -0.34, -0.02, 
@@ -100,7 +122,7 @@ Energy functions based on several sources, primarily SantaLucia's 2004 paper,
 along with handling of dangles, tails, and nicks specifically for DX tile sticky
 ends.
     """
-    def __init__(self, temperature=37, mismatchtype='max', coaxparams=False, singlepair=False):
+    def __init__(self, temperature=37, mismatchtype='combined', coaxparams=False, singlepair=False):
         self.coaxparams = coaxparams
         self.singlepair = singlepair
         self.setup_params(temperature)
@@ -134,7 +156,16 @@ ends.
     def setup_params( self, temperature=37 ):
         self.initdG = initdG37 - (temperature-37)*initdS
         self.nndG = nndG37 - (temperature-37)*nndS
-        self.coaxddG = coaxddG37 - (temperature-37)*coaxddS
+        if self.coaxparams is True:
+            self.coaxddG = coaxddG37 - (temperature-37)*coaxddS
+        elif self.coaxparams == 'peyret':
+            self.coaxddG = coax_peyret_ddG37 - (temperature-37)*coax_peyret_ddS
+            self.coaxparams = True
+        elif self.coaxparams == 'pyshni':
+            self.coaxddG = coax_pyshni_ddG37 - (temperature-37)*coax_pyshni_ddS
+            self.coaxparams = True
+        else:
+            self.coaxddG = np.zeros_like(coaxddG37)
         self.dangle5dG = dangle5dG37 - (temperature-37)*dangle5dS
         self.dangle3dG = dangle3dG37 - (temperature-37)*dangle3dS
         self.intmmdG = intmmdG37 - (temperature-37)*intmmdS
