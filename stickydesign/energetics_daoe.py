@@ -20,17 +20,22 @@ nndS = np.array([-0.0213, -0.0224, -0.021 , -0.0204, -0.0227, -0.0199, -0.0272,
 
 # Coaxial stacking parameter dGs at 37 C are from Protozanova 2004
 # (doi:10.1016/j.jmb.2004.07.075), table 2.
-coaxdG37 = np.array([       -1.04, -2.04, -1.29, -1.27,
+coax_prot_tab2_dG37 = np.array([       -1.04, -2.04, -1.29, -1.27,
                             -0.78, -1.97, -1.44, -1.29,
                             -1.66, -2.70, -1.97, -2.04,
                             -0.12, -1.66, -0.78, -1.04])
 
+coax_prot_tab1_dG37 = np.array([-1.11, -1.81, -1.06, -1.34,
+                                -0.55, -1.44, -0.91, -1.06,
+                                -1.43, -2.17, -1.44, -1.81,
+                                -0.19, -1.43, -0.55, -1.11])
+
 # Coaxial stacking parameter dSs for Protozanova parameters are taken
 # from Zhang, 2009 supplementary information, which discusses this
 # formulaic approach.
-coaxdS = 0.0027 / (1-310.15*0.0027) * coaxdG37
+coaxdS = 0.0027 / (1-310.15*0.0027) * coax_prot_tab2_dG37
 coaxddS = coaxdS-nndS
-coaxddG37 = coaxdG37-nndG37 # correction term rather than absolute dG
+coaxddG37 = coax_prot_tab2_dG37-nndG37 # correction term rather than absolute dG
 
 # Coaxial stacking parameters from Pyshni, Ivanova 2002
 coax_pyshni_dG37 = np.array([ -1.22, -2.10, -1.19, -1.89,
@@ -122,9 +127,10 @@ Energy functions based on several sources, primarily SantaLucia's 2004 paper,
 along with handling of dangles, tails, and nicks specifically for DX tile sticky
 ends.
     """
-    def __init__(self, temperature=37, mismatchtype='combined', coaxparams=False, singlepair=False):
+    def __init__(self, temperature=37, mismatchtype='combined', coaxparams=False, singlepair=False, danglecorr=True):
         self.coaxparams = coaxparams
         self.singlepair = singlepair
+        self.danglecorr = danglecorr
         self.setup_params(temperature)
 
         import os
@@ -189,11 +195,15 @@ ends.
 
         # In both cases here, the energy we want is the NN binding energy of each stack,
         if seqs.endtype=='DT':
-            dcorr = - self.dangle3dG[ps[:,0]] - self.dangle3dG[ps.revcomp()[:,0]]
+            dcorr = np.zeros_like(self.dangle3dG[ps[:,0]])
+            if self.danglecorr:
+                dcorr += - self.dangle3dG[ps[:,0]] - self.dangle3dG[ps.revcomp()[:,0]]
             if self.coaxparams:
                 dcorr += self.coaxddG[ps[:,0]] + self.coaxddG[ps.revcomp()[:,0]]
         elif seqs.endtype=='TD':
-            dcorr = - self.dangle5dG[ps[:,-1]] - self.dangle5dG[ps.revcomp()[:,-1]]
+            dcorr = np.zeros_like(self.dangle5dG[ps[:,-1]])
+            if self.danglecorr:
+                dcorr += - self.dangle5dG[ps[:,-1]] - self.dangle5dG[ps.revcomp()[:,-1]]
             if self.coaxparams:
                 dcorr += self.coaxddG[ps[:,-1]] + self.coaxddG[ps.revcomp()[:,-1]]
         return -(np.sum(self.nndG[ps],axis=1) + self.initdG + dcorr)
