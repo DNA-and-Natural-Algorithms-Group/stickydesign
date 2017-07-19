@@ -2,7 +2,7 @@ from __future__ import division
 import os
 import pkg_resources
 import numpy as np
-from .stickydesign import InputError, pairseqa, tops, endarray
+from .endclasses import pairseqa, tops, endarray
 
 # n.b.: All parameters arrays here are arranged to fit the binary
 # representation used in stickydesign.  A, C, G, and T are given values of
@@ -131,7 +131,7 @@ looppenalty = 3.6
 # yapf: enable
 
 
-class energetics_daoe(object):
+class EnergeticsDAOE(object):
     """Energy functions based on several sources, primarily SantaLucia's 2004
 paper, along with handling of dangles, tails, and nicks specifically for DX
 tile sticky ends.
@@ -175,7 +175,7 @@ tile sticky ends.
         elif mismatchtype == 'combined' or mismatchtype == 'new':
             self.uniform = self.uniform_combinedmismatch
         else:
-            raise InputError(
+            raise ValueError(
                 "Mismatchtype {0} is not supported.".format(mismatchtype))
 
     def setup_params(self, temperature=37):
@@ -252,7 +252,7 @@ tile sticky ends.
                     np.repeat(np.array([seqs1]), seqs2.shape[0], 0),
                     seqs1.endtype)
             else:
-                raise InputError(
+                raise ValueError(
                     "Lengths of sequence arrays are not acceptable.")
         assert seqs1.endtype == seqs2.endtype
         endtype = seqs1.endtype
@@ -312,7 +312,7 @@ tile sticky ends.
                     np.repeat(np.array([seqs1]), seqs2.shape[0], 0),
                     seqs1.endtype)
             else:
-                raise InputError(
+                raise ValueError(
                     "Lengths of sequence arrays are not acceptable.")
         assert seqs1.endtype == seqs2.endtype
         endtype = seqs1.endtype
@@ -402,7 +402,7 @@ tile sticky ends.
                     np.repeat(np.array([seqs1]), seqs2.shape[0], 0),
                     seqs1.endtype)
             else:
-                raise InputError(
+                raise ValueError(
                     "Lengths of sequence arrays are not acceptable.")
 
         assert seqs1.endtype == seqs2.endtype

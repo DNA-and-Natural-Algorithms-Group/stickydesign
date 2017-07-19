@@ -2,11 +2,7 @@ from __future__ import division
 
 import numpy as np
 
-from .stickydesign import InputError, endarray
-
-
-def tops(s):
-    return 4 * s[:, :-1] + s[:, 1:]
+from .endclasses import endarray, tops
 
 
 class energetics_santalucia:
@@ -46,7 +42,7 @@ class energetics_santalucia:
         elif mismatchtype == 'dangle':
             self.uniform = self.uniform_danglemismatch
         else:
-            raise InputError(
+            raise ValueError(
                 "Mismatchtype {0} is not supported.".format(mismatchtype))
 
     def matching_uniform(self, seqs):
@@ -59,7 +55,7 @@ class energetics_santalucia:
                     np.repeat(np.array([seqs1]), seqs2.shape[0], 0),
                     seqs1.endtype)
             else:
-                raise InputError(
+                raise ValueError(
                     "Lengths of sequence arrays are not acceptable.")
         assert seqs1.endtype == seqs2.endtype
         endtype = seqs1.endtype
@@ -104,7 +100,7 @@ class energetics_santalucia:
                     np.repeat(np.array([seqs1]), seqs2.shape[0], 0),
                     seqs1.endtype)
             else:
-                raise InputError(
+                raise ValueError(
                     "Lengths of sequence arrays are not acceptable.")
         assert seqs1.endtype == seqs2.endtype
         endtype = seqs1.endtype
