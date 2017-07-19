@@ -3,6 +3,7 @@ import os
 import pkg_resources
 import numpy as np
 from .endclasses import pairseqa, tops, endarray
+from .version import __version__
 
 # n.b.: All parameters arrays here are arranged to fit the binary
 # representation used in stickydesign.  A, C, G, and T are given values of
@@ -143,10 +144,14 @@ tile sticky ends.
                  mismatchtype='combined',
                  coaxparams=False,
                  singlepair=False,
-                 danglecorr=True):
+                 danglecorr=True,
+                 version=None,
+                 enclass=None):
         self.coaxparams = coaxparams
         self.singlepair = singlepair
         self.danglecorr = danglecorr
+        self.temperature = temperature
+        self.mismatchtype = mismatchtype
         self.setup_params(temperature)
 
         try:
@@ -178,21 +183,50 @@ tile sticky ends.
             raise ValueError(
                 "Mismatchtype {0} is not supported.".format(mismatchtype))
 
+    @property
+    def info(self):
+        info = {'enclass': 'EnergeticsDAOE',
+                'temperature': self.temperature,
+                'mismatchtype': self.mismatchtype,
+                'coaxparams': self.coaxparaminfo,
+                'danglecorr': self.danglecorr,
+                'singlepair': self.singlepair,
+                'version': __version__}
+        return info
+
+    def __str__(self):
+        return "EnergeticsDAOE(" + \
+            ", ".join("{}={}".format(x, repr(y))
+                      for x, y in self.info.items()) + \
+            ")"
+
+    def __repr__(self):
+        return self.__str__()
+    
     def setup_params(self, temperature=37):
         self.initdG = initdG37 - (temperature - 37) * initdS
         self.nndG = nndG37 - (temperature - 37) * nndS
-        if self.coaxparams is True:
+        if self.coaxparams == 'protozanova' or self.coaxparams is True:
             self.coaxddG = coaxddG37 - (temperature - 37) * coaxddS
+            self.coaxparaminfo = 'protozanova'
+            self.coaxparams = True
         elif self.coaxparams == 'peyret':
             self.coaxddG = coax_peyret_ddG37 - (
                 temperature - 37) * coax_peyret_ddS
+            self.coaxparaminfo = self.coaxparams
             self.coaxparams = True
         elif self.coaxparams == 'pyshni':
             self.coaxddG = coax_pyshni_ddG37 - (
                 temperature - 37) * coax_pyshni_ddS
+            self.coaxparaminfo = self.coaxparams
             self.coaxparams = True
-        else:
+        elif not self.coaxparams:
             self.coaxddG = np.zeros_like(coaxddG37)
+            self.coaxparaminfo = self.coaxparams
+            self.coaxparams = False
+        else:
+            raise ValueError("Invalid coaxparams: {}".format(self.coaxparams),
+                             self.coaxparams)
         self.dangle5dG = dangle5dG37 - (temperature - 37) * dangle5dS
         self.dangle3dG = dangle3dG37 - (temperature - 37) * dangle3dS
         self.intmmdG = intmmdG37 - (temperature - 37) * intmmdS
