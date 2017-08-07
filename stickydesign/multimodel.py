@@ -21,6 +21,7 @@ def endchooser(all_energetics,
     """
     
     def endchooser(currentends, availends, energetics):
+        nonlocal target_vals
         if len(currentends) == 0 and not target_vals:
             # Starting out, we need to choose an initial end, and use that
             # to choose our target values.
@@ -30,7 +31,7 @@ def endchooser(all_energetics,
             choices = np.argsort(dev)
             choice = choices[np.random.randint(
                 0,
-                max(1, ceil(init_wigglefraction, len(availends)))
+                max(1, ceil(init_wigglefraction * len(availends)))
                 )]
             return availends[choice]
         else:
