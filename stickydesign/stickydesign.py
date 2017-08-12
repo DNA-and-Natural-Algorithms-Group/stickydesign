@@ -585,15 +585,15 @@ def energy_array_uniform(seqs, energetics):
             seqs, (seqs.shape[0], 1))).reshape((seqs.shape[0], seqs.shape[0]))
 
 
-def endchooser_standard(desint):
+def endchooser_standard(desint, wiggle=0.0):
     """
     An endchooser function: return a random end with end-comp energy closest to
     desint.
     """
 
     def endchooser(currentends, availends, energetics):
-        ddiff = (energetics.matching_uniform(availends) - desint)**2
-        choices = np.flatnonzero(ddiff == np.amin(ddiff))
+        ddiff = np.abs(energetics.matching_uniform(availends) - desint)
+        choices = np.flatnonzero(ddiff <= np.amin(ddiff)+wiggle)
         newend = availends[choices[np.random.randint(0, len(choices))]]
         return newend
 
