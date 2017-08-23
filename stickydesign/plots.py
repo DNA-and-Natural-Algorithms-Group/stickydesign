@@ -7,7 +7,7 @@ from .stickydesign import energy_array_uniform
 def hist_multi(all_ends,
                all_energetics,
                energetics_names=None,
-               title=None):
+               title=None, **kwargs):
     
     pylab.figure(figsize=(10, 15))
     pylab.subplot(3, 1, 1)
@@ -18,8 +18,7 @@ def hist_multi(all_ends,
         ],
         bins=50,
         label=energetics_names,
-        stacked=False,
-        histtype='step')
+        **kwargs)
     if energetics_names:
         pylab.legend()
     pylab.xlabel("$ΔG_{se}$ (kcal/mol)")
@@ -34,8 +33,7 @@ def hist_multi(all_ends,
             for en in all_energetics
         ],
         bins=100,
-        histtype='step',
-        label=energetics_names)
+        label=energetics_names, **kwargs)
     pylab.xlabel("$ΔG_{se}$ (kcal/mol)")
     pylab.ylabel("# of interactions")
     pylab.title("All ends")
@@ -49,8 +47,7 @@ def hist_multi(all_ends,
             for en in all_energetics
         ],
         bins=b,
-        histtype='step',
-        label=energetics_names)
+        label=energetics_names, **kwargs)
     pylab.xlim(2.5, 9.0)
     pylab.xlabel("$ΔG_{se}$ (kcal/mol)")
     pylab.ylabel("# of interactions")
