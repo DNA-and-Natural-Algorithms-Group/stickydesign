@@ -8,7 +8,7 @@ stickyext = Extension('stickydesign._stickyext', sources=['stickydesign/_stickye
 # run the setup
 setup(
     name='stickydesign',
-    version='0.5.0.dev1',
+    version='0.5.0',
 
     install_requires = ['numpy'],
 
