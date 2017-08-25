@@ -218,11 +218,46 @@ def find_end_set_uniform(endtype,
                 break
         endsets.append(curends)
 
+    # Verification:
+    # Note: this currently gives weird output that is not helpful when it fails.
+    # But if this fails, you've done something very weird, most likely, because
+    # this is just internal sanity checking.
+    for endset in endsets:
+        oldr = np.arange(0, len(oldends))
+        newr = np.arange(len(oldends), len(endset))
+        allr = np.arange(0, len(endset))
+        # All new ends must satisfy old ends:
+        if oldendfilter is None and len(oldends) > 0:
+            assert np.asarray(
+                endfilter(endset[oldr, :], None,
+                          endset[newr, :], energetics) ==
+                endset[newr, :]).all()
+        elif len(oldends) > 0:
+            assert np.asarray(
+                oldendfilter(endset[oldr, :], None,
+                             endset[newr, :], energetics) ==
+                endset[newr, :]).all()
+        # Each new end must allow all others
+        for i in newr:
+            if oldendfilter is None:
+                assert np.asarray(
+                    endfilter(endset[i, :][None, :], None,
+                              endset, energetics) ==
+                    endset[i != allr, :]).all()
+            else:
+                assert np.asarray(
+                    oldendfilter(endset[i, :][None, :], None,
+                                 endset[oldr, :], energetics) ==
+                    endset[oldr, :]).all()
+                assert np.asarray(
+                    endfilter(endset[i, :][None, :], None,
+                              endset[newr, :], energetics) ==
+                    endset[newr[i != newr], :]).all()
+
     if len(endsets) > 1:
         return endsets
     else:
         return endsets[0]
-    # TODO: multiple sets generated, decide which is best.
 
 
 def enhist(endtype,

@@ -8,7 +8,7 @@ stickyext = Extension('stickydesign._stickyext', sources=['stickydesign/_stickye
 # run the setup
 setup(
     name='stickydesign',
-    version='0.5.0',
+    version='0.5.1.dev1',
 
     install_requires = ['numpy'],
 
@@ -17,7 +17,7 @@ setup(
     package_data={'stickydesign': ['params/dnastackingbig.csv']},
 
     author = "Constantine Glen Evans",
-    author_email = "cevans@dna.caltech.edu",
+    author_email = "cevans@evans.foundation",
     description = "StickyDesign DNA Tile Sticky End Package",
     url = 'http://dna.caltech.edu/StickyDesign',
     zip_safe = True,
