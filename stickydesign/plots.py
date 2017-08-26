@@ -7,9 +7,8 @@ from .stickydesign import energy_array_uniform
 def hist_multi(all_ends,
                all_energetics,
                energetics_names=None,
-               title=None, **kwargs):
-    
-    pylab.figure(figsize=(10, 15))
+               title="", **kwargs):
+    fig = pylab.figure(figsize=(10, 15))
     pylab.subplot(3, 1, 1)
     pylab.hist(
         [
@@ -55,3 +54,16 @@ def hist_multi(all_ends,
     if title:
         pylab.suptitle(title)
     pylab.tight_layout(rect=[0, 0.3, 1, 0.97])
+    return fig
+
+
+def heatmap(ends, energetics, title="", **kwargs):
+    fig = pylab.figure()
+
+    heat = energy_array_uniform(ends, energetics)
+
+    pylab.imshow(heat)
+    pylab.colorbar()
+    pylab.title(title)
+
+    return fig
