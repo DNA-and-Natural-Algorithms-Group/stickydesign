@@ -5,7 +5,7 @@ import numpy as np
 from .endclasses import endarray, tops
 
 
-class energetics_santalucia:
+class EnergeticsBasic:
     """
     Energy functions based on SantaLucia's 2004 paper.
 
@@ -31,7 +31,7 @@ class energetics_santalucia:
                 raise IOError("Error loading dnastackingbig.csv")
         self.nndG_full = -np.loadtxt(dsb, delimiter=',')
         dsb.close()
-        self.initdG = 0.0  # 1.96 DISABLED FOR NOW
+        self.initdG = 1.96
         self.nndG = self.nndG_full[np.arange(0, 16), 15 - np.arange(0, 16)]
         if mismatchtype == 'max':
             self.uniform = lambda x, y: \
