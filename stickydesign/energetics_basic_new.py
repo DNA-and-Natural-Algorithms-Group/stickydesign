@@ -4,10 +4,10 @@ from .endclasses import pairseqa, tops, endarray
 from .version import __version__
 import warnings
 
-import params as p
+from . import newparams as p
 
 
-class EnergeticsDAOE(object):
+class EnergeticsBasicNew(object):
     """Energy functions based on several sources, primarily SantaLucia's 2004
 paper, along with handling of dangles, tails, and nicks specifically for DX
 tile sticky ends.

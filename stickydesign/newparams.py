@@ -4,6 +4,8 @@
 # order.  Thus, for example, 5 would correspond to 5'-CC-3', and 2 would
 # correspond to 5'-AG-3'.
 
+import numpy as np
+
 # yapf: disable
 
 # dG and dS parameters from SantaLucia, 2004.

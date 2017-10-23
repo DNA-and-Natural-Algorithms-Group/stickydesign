@@ -4,7 +4,7 @@ from .endclasses import pairseqa, tops, endarray
 from .version import __version__
 import warnings
 
-import params as p
+from . import newparams as p
 
 
 class EnergeticsDAOE(object):

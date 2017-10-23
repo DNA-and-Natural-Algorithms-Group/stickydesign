@@ -5,7 +5,7 @@ import logging
 from math import ceil
 
 from .endclasses import endarray, lton, wc
-from .energetics import EnergeticsBasic
+from .energetics_basic import EnergeticsBasic
 
 
 def values_chunked(items, endtype, chunk_dim=10):
@@ -66,6 +66,8 @@ def get_accept_set(endtype,
     elif endtype == 'TD':
         template = [lton[wc[adjacents[1]]]] + [lton[alphabet.lower()]] \
                    * length + [lton[adjacents[0]]]
+    elif endtype == 'S':
+        template = [lton[alphabet.lower()]]*length
 
     logging.info("Length {0}, type {1}, adjacents {2}, alphabet {3}.".format(
         length, endtype, adjacents, alphabet))
@@ -151,7 +153,9 @@ def find_end_set_uniform(endtype,
     elif endtype == 'TD':
         template = [lton[wc[adjacents[1]]]] + [lton[alphabet.lower()]] \
                    * length + [lton[adjacents[0]]]
-
+    elif endtype == 'S':
+        template = [lton[alphabet.lower()]]*length
+    
     logging.info("Length {0}, type {1}, adjacents {2}, alphabet {3}.".format(
         length, endtype, adjacents, alphabet))
     logging.debug("Have template {0}.".format(template, endtype))
@@ -274,7 +278,9 @@ def enhist(endtype,
     elif endtype == 'TD':
         template = [lton[wc[adjacents[1]]]] +\
                    [lton[alphabet.lower()]] * length + [lton[adjacents[0]]]
-
+    elif endtype == 'S':
+        template = [lton[alphabet.lower()]]*length
+    
     if not energetics:
         energetics = EnergeticsBasic(mismatchtype='max')
 

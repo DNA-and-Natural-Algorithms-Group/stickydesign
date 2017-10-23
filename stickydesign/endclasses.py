@@ -47,12 +47,16 @@ class endarray(np.ndarray):
             return self[:, :-1]
         elif self.endtype == 'TD':
             return self[:, 1:]
+        elif self.endtype == 'S':
+            return self[:, :]
 
     def _get_comps(self):
         if self.endtype == 'DT':
             return (3 - self)[:, ::-1][:, :-1]
         elif self.endtype == 'TD':
             return (3 - self)[:, ::-1][:, 1:]
+        elif self.endtype == 'S':
+            return (3 - self)[:, ::-1][:, :]
 
     def _get_adjs(self):
         if self.endtype == 'DT':
