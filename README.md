@@ -3,11 +3,21 @@ The StickyDesign Sticky End Sequence Design Package
 
 # Introduction
 
-StickyDesign is a Python package developed by the Winfree lab at Caltech (http://dna.caltech.edu) for designing sticky end sequences for DNA tile systems, especially systems using DX and other tile structures where sticky ends in a single tile are separated by double-stranded regions (better support for single stranded tiles is still under development). 
+StickyDesign is a Python package developed by the Winfree lab at
+Caltech (http://dna.caltech.edu) for designing sticky end sequences
+for DNA tile systems, especially systems using DX and other tile
+structures where sticky ends in a single tile are separated by
+double-stranded regions (better support for single stranded tiles is
+still under development).
 
 # Requirements
 
-StickyDesign is implemented as a Python library that can easily be used interactively through an interactive Python environment like iPython[1]. It uses portions of the general scientific computing ecosystem for Python, and also uses a small Python C extension to greatly accelerate energetics calculations. As such, it likely requires a minimum:
+StickyDesign is implemented as a Python library that can easily be
+used interactively through an interactive Python environment like
+iPython[1]. It uses portions of the general scientific computing
+ecosystem for Python, and also uses a small Python C extension to
+greatly accelerate energetics calculations. As such, it likely
+requires a minimum:
 
 * Python >= 2.6
 * Numpy
@@ -15,25 +25,34 @@ StickyDesign is implemented as a Python library that can easily be used interact
 * A working C compiler setup
 * Python development headers
 
-The easiest way to ensure the installation of these requirements is to use a scientific Python distribution like Enthought or Anaconda; the Scipy website has a [list of these distributions](http://scipy.org/install.html).
+The easiest way to ensure the installation of these requirements is to
+use a scientific Python distribution like Enthought or Anaconda; the
+Scipy website has a [list of these
+distributions](http://scipy.org/install.html).
 
 # Installation
 
-StickyDesign uses the standard Setuptools/Distutils system for Python packages, based around a setup.py. Thus, to install the system into your global Python distribution (whether global to the computer or just your account), just run the following (with sudo if necessary):
+The easiest way to install stickydesign is via Pip.
 
-    ./setup.py install
+To install via PyPI (stable releases, may be outdated):
 
-To install to another location, or set options for the installation, consult the documentation for the install command:
-    
-	./setup.py install --help 
-
-To only build the library in a `build/` subdirectory, use the build command:
-
-    ./setup.py build
+	pip install stickydesign
 	
-The built library (a directory named `stickydesign`) can be moved to wherever you run your Python interpreter and used without installation.	
-	
-Running setup.py with no options will provide a number of options and directions to further documentation.
+To install from github's main branch (stable, more up to date):
+
+    pip install git+https://github.com/DNA-and-Natural-Algorithms-Group/stickydesign.git
+
+To install from github's main development branch (unstable):
+
+    pip install git+https://github.com/DNA-and-Natural-Algorithms-Group/stickydesign.git@dev
+
+Alternatively, normal python installation methods (easy_install, setup.py) may
+be used. 
+
+Installation requires a working C compiler so that energy model
+speedups can be compiled.  If compilation does not work for you,
+please let us know.
+
 
 # Use
 
