@@ -58,6 +58,13 @@ class endarray(np.ndarray):
         elif self.endtype == 'S':
             return (3 - self)[:, ::-1][:, :]
 
+    def concat(a1, a2):
+        assert a1.endtype == a2.endtype
+
+        return endarray(
+            np.concatenate((np.array(a1), np.array(a2)), axis=0),
+            a1.endtype)
+        
     def _get_adjs(self):
         if self.endtype == 'DT':
             return self[:, 0]

@@ -10,6 +10,7 @@ setup(
     name='stickydesign',
     version='0.5.1.dev1',
 
+    setup_requires = ['numpy'],
     install_requires = ['numpy'],
 
     packages=['stickydesign'],
