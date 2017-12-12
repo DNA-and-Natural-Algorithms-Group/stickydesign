@@ -7,6 +7,8 @@ from math import ceil
 from .endclasses import endarray, lton, wc
 from .energetics_basic import EnergeticsBasic
 
+LOGGER = logging.getLogger(__name__)
+
 
 def values_chunked(items, endtype, chunk_dim=10):
     """
@@ -69,9 +71,9 @@ def get_accept_set(endtype,
     elif endtype == 'S':
         template = [lton[alphabet.lower()]]*length
 
-    logging.info("Length {0}, type {1}, adjacents {2}, alphabet {3}.".format(
+    LOGGER.info("Length {0}, type {1}, adjacents {2}, alphabet {3}.".format(
         length, endtype, adjacents, alphabet))
-    logging.debug("Have template {0}.".format(template, endtype))
+    LOGGER.debug("Have template {0}.".format(template, endtype))
 
     # Create the chunk iterator
     endchunk = values_chunked(template, endtype)
@@ -81,16 +83,16 @@ def get_accept_set(endtype,
     chunknum = 0
     totchunks = None
     totends = np.product([len(x) for x in template])
-    logging.debug(
+    LOGGER.debug(
         "Have {0} ends in total before any filtering.".format(totends))
     for chunk in endchunk:
         matcharrays.append(spacefilter(chunk, energetics))
         if not totchunks:
             totchunks = totends // len(chunk)
         chunknum += 1
-        logging.debug("Found {0} filtered ends in chunk {1} of {2}.".format(
+        LOGGER.debug("Found {0} filtered ends in chunk {1} of {2}.".format(
             len(matcharrays[-1]), chunknum, totchunks))
-    logging.debug("Done with spacefiltering.")
+    LOGGER.debug("Done with spacefiltering.")
     availends = np.vstack(matcharrays).view(endarray)
     availends.endtype = endtype
     return availends
@@ -156,9 +158,9 @@ def find_end_set_uniform(endtype,
     elif endtype == 'S':
         template = [lton[alphabet.lower()]]*length
     
-    logging.info("Length {0}, type {1}, adjacents {2}, alphabet {3}.".format(
+    LOGGER.info("Length {0}, type {1}, adjacents {2}, alphabet {3}.".format(
         length, endtype, adjacents, alphabet))
-    logging.debug("Have template {0}.".format(template, endtype))
+    LOGGER.debug("Have template {0}.".format(template, endtype))
 
     # Create the chunk iterator
     endchunk = values_chunked(template, endtype)
@@ -168,16 +170,16 @@ def find_end_set_uniform(endtype,
     chunknum = 0
     totchunks = None
     totends = np.product([len(x) for x in template])
-    logging.debug(
+    LOGGER.debug(
         "Have {0} ends in total before any filtering.".format(totends))
     for chunk in endchunk:
         matcharrays.append(spacefilter(chunk, energetics))
         if not totchunks:
             totchunks = totends // len(chunk)
         chunknum += 1
-        logging.debug("Found {0} filtered ends in chunk {1} of {2}.".format(
+        LOGGER.debug("Found {0} filtered ends in chunk {1} of {2}.".format(
             len(matcharrays[-1]), chunknum, totchunks))
-    logging.debug("Done with spacefiltering.")
+    LOGGER.debug("Done with spacefiltering.")
     availends = np.vstack(matcharrays).view(endarray)
     availends.endtype = endtype
 
@@ -193,7 +195,7 @@ def find_end_set_uniform(endtype,
 
     startavail = availends
     endsets = []
-    logging.debug("Starting with {0} ends.".format(len(availends)))
+    LOGGER.debug("Starting with {0} ends.".format(len(availends)))
     while len(endsets) < numtries:
         curends = oldends
         availends = startavail
@@ -202,10 +204,10 @@ def find_end_set_uniform(endtype,
             newend = endarray(
                 np.array([endchooser(curends, availends, energetics)]),
                 endtype)
-            logging.debug("Chose end {0}.".format(repr(newend)))
+            LOGGER.debug("Chose end {0}.".format(repr(newend)))
             newend.endtype = endtype
             availends = endfilter(newend, curends, availends, energetics)
-            logging.debug("Done filtering.")
+            LOGGER.debug("Done filtering.")
             if curends is None:
                 curends = newend
             elif len(curends) == 0:
@@ -213,10 +215,10 @@ def find_end_set_uniform(endtype,
             else:
                 curends = curends.append(newend)
             numends += 1
-            logging.debug("Now have {0} ends in set, and {1} ends available.".
+            LOGGER.debug("Now have {0} ends in set, and {1} ends available.".
                           format(numends, len(availends)))
             if len(availends) == 0:
-                logging.info("Found {0} ends.".format(numends))
+                LOGGER.info("Found {0} ends.".format(numends))
                 break
             if numends >= num and num > 0:
                 break
@@ -292,7 +294,7 @@ def enhist(endtype,
     if not bins:
         bins = np.arange(minbin, maxbin, 0.1)
 
-    logging.debug("Have template {0} and type {1}.".format(template, endtype))
+    LOGGER.debug("Have template {0} and type {1}.".format(template, endtype))
 
     # Create the chunk iterator
     endchunk = values_chunked(template, endtype)
@@ -310,7 +312,7 @@ def enhist(endtype,
                         + np.mean(matchens) * len(chunk) /
                         (len(chunk)+finishedends))
         finishedends += len(matchens)
-        logging.debug("Done with {0}/{1} ends.".format(finishedends, totends))
+        LOGGER.debug("Done with {0}/{1} ends.".format(finishedends, totends))
 
     x = (bins[:-1] + bins[1:]) / 2
     n = hist
@@ -406,7 +408,7 @@ def easyends(endtype,
             energetics=efunc,
             adjacents=adjs,
             alphabet=alphabet)[2]['emedian']
-        logging.info("Calculated optimal interaction energy is {0}.".format(
+        LOGGER.info("Calculated optimal interaction energy is {0}.".format(
             interaction))
     maxcompspurious = maxspurious * interaction
     if not maxendspurious:
@@ -459,7 +461,7 @@ def easy_space(endtype,
             energetics=efunc,
             adjacents=adjs,
             alphabet=alphabet)[2]['emedian']
-        logging.info("Calculated optimal interaction energy is {0}.".format(
+        LOGGER.info("Calculated optimal interaction energy is {0}.".format(
             interaction))
     maxcompspurious = maxspurious * interaction
     if not maxendspurious:
@@ -491,16 +493,16 @@ def easy_space(endtype,
     chunknum = 0
     totchunks = None
     totends = np.product([len(x) for x in template])
-    logging.info(
+    LOGGER.info(
         "Have {0} ends in total before any filtering.".format(totends))
     for chunk in endchunk:
         matcharrays.append(spacefilter(chunk, energetics))
         if not totchunks:
             totchunks = totends // len(chunk)
         chunknum += 1
-        logging.debug("Found {0} filtered ends in chunk {1} of {2}.".format(
+        LOGGER.debug("Found {0} filtered ends in chunk {1} of {2}.".format(
             len(matcharrays[-1]), chunknum, totchunks))
-    logging.debug("Done with spacefiltering.")
+    LOGGER.debug("Done with spacefiltering.")
     availends = np.vstack(matcharrays).view(endarray)
     availends.endtype = endtype
 
