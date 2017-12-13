@@ -2,6 +2,9 @@ import numpy as np
 from math import ceil
 from .endclasses import lton
 
+import logging
+LOGGER = logging.getLogger(__name__+'.endchooser')
+
 
 def endchooser(all_energetics,
                target_vals=None,
@@ -50,6 +53,7 @@ def endchooser(all_energetics,
                     en.matching_uniform(currentends[0:1])
                     for en in all_energetics
                 ]
+                LOGGER.debug(target_vals)
             availfiltered = availends
             if templates:
                 t = next(templates)
