@@ -19,7 +19,7 @@ ecosystem for Python, and also uses a small Python C extension to
 greatly accelerate energetics calculations. As such, it likely
 requires a minimum:
 
-* Python >= 2.6
+* Python >= 2.6 (Python 3.6 or higher recommended)
 * Numpy
 * Scipy
 * A working C compiler setup
