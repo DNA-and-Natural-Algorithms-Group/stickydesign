@@ -1,5 +1,5 @@
 from . import energetics_daoe
-from . import energetics
+from . import energetics_basic_old
 from .stickydesign import endarray
 import numpy as np
 
@@ -41,7 +41,7 @@ class test_energetics():
         r10td = endarray(
             np.random.randint(low=0, high=4, size=(100, 12)), 'TD')
         self.sets = [r5dt, r5td, r10dt, r10td]
-        self.en = energetics.EnergeticsBasic()
+        self.en = energetics_basic_old.EnergeticsBasicOld()
 
     def test_matching_energies_match(self):
         for s in self.sets:

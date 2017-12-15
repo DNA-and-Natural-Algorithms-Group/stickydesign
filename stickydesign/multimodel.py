@@ -3,7 +3,7 @@ from math import ceil
 from .endclasses import lton
 
 import logging
-LOGGER = logging.getLogger(__name__+'.endchooser')
+LOGGER = logging.getLogger(__name__)
 
 
 def endchooser(all_energetics,
@@ -57,6 +57,7 @@ def endchooser(all_energetics,
             availfiltered = availends
             if templates:
                 t = next(templates)
+                LOGGER.debug("Template {}".format(t))
                 for i, nt in enumerate(t):
                     if nt != 'n':
                         availfiltered = availfiltered[availfiltered[:, i] ==
@@ -71,6 +72,14 @@ def endchooser(all_energetics,
             choices = np.argsort(dev)
             choice = choices[np.random.randint(
                 0, max(1, ceil(len(choices) * next_wigglefraction)))]
+            LOGGER.debug("Chose {}: {} from {}: {} / {}".format(
+                availfiltered[choice:choice+1].tolist(),
+                np.nonzero(choices == choice),
+                len(availfiltered),
+                dev[choice],
+                np.concatenate([en.matching_uniform(availfiltered[choice:choice+1]) for en,
+                 tv in zip(all_energetics, target_vals)])))
+                         
             return availfiltered[choice]
 
     return endchooser

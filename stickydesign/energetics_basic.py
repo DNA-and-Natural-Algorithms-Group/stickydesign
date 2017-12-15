@@ -1,54 +1,129 @@
 from __future__ import division
-
 import numpy as np
+from .endclasses import pairseqa, tops, endarray
+from .version import __version__
+import warnings
 
-from .endclasses import endarray, tops
+from . import newparams as p
 
 
-class EnergeticsBasic:
+class EnergeticsBasic(object):
+
+    """Energy functions based on several sources, primarily SantaLucia's
+       2004 paper.  This class uses the same parameters and algorithms
+       as EnergeticsDAOE, bet does not make DX-specific assumptions.
+       Instead, it assumes that each energy should simply be that of
+       two single strands attaching/detaching, without consideration
+       of nicks, stacking, or other effects related to the
+       beginning/end of each sequence.  Dangles and tails are still
+       included in mismatched binding calculations when appropriate.
+
+       Relevant arguments:
+       
+       singlepair (bool, default False) --- treat single base pair pairings
+       as possible.
+       temperature (float in degrees Celsius, default 37) --- temperature
+       to use for the model, in C.
     """
-    Energy functions based on SantaLucia's 2004 paper.
+    
+    def __init__(self,
+                 temperature=37,
+                 mismatchtype=None,
+                 coaxparams=False,
+                 singlepair=False,
+                 danglecorr=True,
+                 version=None,
+                 enclass=None):
+        self.coaxparams = coaxparams
+        self.singlepair = singlepair
+        self.danglecorr = danglecorr
+        self.temperature = temperature
 
-    mismatchtype is one of 'max', 'loop', or 'dangle', specifying how to
-    consider mismatches.  'max' is probably the best choice, but is slowest -
-    it takes the maximum interaction of the 'loop' and 'dangle' options.
-    """
+        if mismatchtype:
+            warnings.warn("Mismatchtype has been deprecated in EnergeticsDAOE \
+and is ignored.  The 'new'/'combined' method is now always used.")
+        self.setup_params(temperature)
 
-    def __init__(self, mismatchtype='max'):
-        import os
-        try:
-            import pkg_resources
-            dsb = pkg_resources.resource_stream(__name__,
-                                                os.path.join(
-                                                    'params',
-                                                    'dnastackingbig.csv'))
-        except:
-            try:
-                this_dir, this_filename = os.path.split(__file__)
-                dsb = open(
-                    os.path.join(this_dir, "params", "dnastackingbig.csv"))
-            except IOError:
-                raise IOError("Error loading dnastackingbig.csv")
-        self.nndG_full = -np.loadtxt(dsb, delimiter=',')
-        dsb.close()
-        self.initdG = 1.96
-        self.nndG = self.nndG_full[np.arange(0, 16), 15 - np.arange(0, 16)]
-        if mismatchtype == 'max':
-            self.uniform = lambda x, y: \
-                           np.maximum(self.uniform_loopmismatch(x, y),
-                                      self.uniform_danglemismatch(x, y))
-        elif mismatchtype == 'loop':
-            self.uniform = self.uniform_loopmismatch
-        elif mismatchtype == 'dangle':
-            self.uniform = self.uniform_danglemismatch
+    @property
+    def info(self):
+        info = {'enclass': 'EnergeticsDAOE',
+                'temperature': self.temperature,
+                'coaxparams': self.coaxparaminfo,
+                'danglecorr': self.danglecorr,
+                'singlepair': self.singlepair,
+                'version': __version__}
+        return info
+
+    def __str__(self):
+        return "EnergeticsDAOE(" + \
+            ", ".join("{}={}".format(x, repr(y))
+                      for x, y in self.info.items()) + \
+            ")"
+
+    def __repr__(self):
+        return self.__str__()
+    
+    def setup_params(self, temperature=37):
+        self.initdG = p.initdG37 - (temperature - 37) * p.initdS
+        self.nndG = p.nndG37 - (temperature - 37) * p.nndS
+        if self.coaxparams == 'protozanova' or self.coaxparams is True:
+            self.coaxddG = p.coaxddG37 - (temperature - 37) * p.coaxddS
+            self.coaxparaminfo = 'protozanova'
+            self.coaxparams = True
+        elif self.coaxparams == 'peyret':
+            self.coaxddG = p.coax_peyret_ddG37 - (
+                temperature - 37) * p.coax_peyret_ddS
+            self.coaxparaminfo = self.coaxparams
+            self.coaxparams = True
+        elif self.coaxparams == 'pyshni':
+            self.coaxddG = p.coax_pyshni_ddG37 - (
+                temperature - 37) * p.coax_pyshni_ddS
+            self.coaxparaminfo = self.coaxparams
+            self.coaxparams = True
+        elif not self.coaxparams:
+            self.coaxddG = np.zeros_like(p.coaxddG37)
+            self.coaxparaminfo = self.coaxparams
+            self.coaxparams = False
         else:
-            raise ValueError(
-                "Mismatchtype {0} is not supported.".format(mismatchtype))
+            raise ValueError("Invalid coaxparams: {}".format(self.coaxparams),
+                             self.coaxparams)
+        self.dangle5dG = p.dangle5dG37 - (temperature - 37) * p.dangle5dS
+        self.dangle3dG = p.dangle3dG37 - (temperature - 37) * p.dangle3dS
+        self.intmmdG = p.intmmdG37 - (temperature - 37) * p.intmmdS
+
+        self.ltmmdG_5335 = np.zeros(256)
+        self.rtmmdG_5335 = np.zeros(256)
+        self.intmmdG_5335 = np.zeros(256)
+
+        # Dumb setup. FIXME: do this cleverly
+        for i in range(0, 4):
+            for j in range(0, 4):
+                for k in range(0, 4):
+                    self.ltmmdG_5335[
+                        i * 64 + j * 16 + k * 4 +
+                        j] = self.dangle5dG[i * 4
+                                            + j] + self.dangle3dG[(3 - j) * 4
+                                                                  + (3 - k)]
+                    self.rtmmdG_5335[
+                        i * 64 + j * 16 + i * 4 +
+                        k] = self.dangle3dG[i * 4
+                                            + j] + self.dangle5dG[(3 - k) * 4
+                                                                  + (3 - i)]
+                    self.intmmdG_5335[i * 64 + j * 16 + k * 4 +
+                                      j] = self.intmmdG[(3 - j) * 16
+                                                        + (3 - k) * 4 + i]
+                    self.intmmdG_5335[i * 64 + j * 16 + i * 4 +
+                                      k] = self.intmmdG[i * 16
+                                                        + j * 4 + (3 - k)]
 
     def matching_uniform(self, seqs):
-        return np.sum(self.nndG[tops(seqs)], axis=1) - self.initdG
+        ps = pairseqa(seqs)
 
-    def uniform_loopmismatch(self, seqs1, seqs2):
+        # In both cases here, the energy we want is the NN binding energy of
+        # each stack,
+        return -(np.sum(self.nndG[ps], axis=1) + self.initdG)
+
+    def uniform(self, seqs1, seqs2, debug=False):
         if seqs1.shape != seqs2.shape:
             if seqs1.ndim == 1:
                 seqs1 = endarray(
@@ -57,86 +132,85 @@ class EnergeticsBasic:
             else:
                 raise ValueError(
                     "Lengths of sequence arrays are not acceptable.")
-        assert seqs1.endtype == seqs2.endtype
-        endtype = seqs1.endtype
 
-        endlen = seqs1.endlen
-        plen = endlen - 1
-
-        # TODO: replace this with cleaner code
-        if endtype == 'DT':
-            ps1 = seqs1[:, 1:-1] * 4 + seqs1[:, 2:]
-            pa1 = seqs1[:, 0] * 4 + seqs1[:, 1]
-            pac1 = (3 - seqs1[:, 0]) * 4 + seqs2[:, -1]
-            ps2 = seqs2[:, ::-1][:, :-2] * 4 + seqs2[:, ::-1][:, 1:-1]
-            pa2 = seqs2[:, 0] * 4 + seqs2[:, 1]
-            pac2 = (3 - seqs2[:, 0]) * 4 + seqs1[:, -1]
-        if endtype == 'TD':
-            ps1 = seqs1[:, :-2] * 4 + seqs1[:, 1:-1]
-            pa1 = seqs1[:, -2] * 4 + seqs1[:, -1]
-            pac1 = seqs2[:, 0] * 4 + (3 - seqs1[:, -1])
-            ps2 = seqs2[:, ::-1][:, 1:-1] * 4 + seqs2[:, ::-1][:, 2:]
-            pa2 = seqs2[:, -2] * 4 + seqs2[:, -1]
-            pac2 = (seqs1[:, 0]) * 4 + (3 - seqs2[:, -1])
-
-        # Shift here is considering the first strand as fixed, and the second
-        # one as shifting.  The shift is the offset of the bottom one in terms
-        # of pair sequences (thus +2 and -1 instead of +1 and 0).
-        en = np.zeros((ps1.shape[0], 2 * plen))
-        for shift in range(-plen + 1, plen):
-            en[:, plen + shift - 1] = np.sum(
-                self.nndG_full[ps1[:, max(shift, 0):plen + shift],
-                               ps2[:, max(-shift, 0):plen - shift]],
-                axis=1)
-        en[:, plen - 1] = (en[:, plen - 1] +
-                           self.nndG_full[pa1, pac1] +
-                           self.nndG_full[pa2, pac2])
-        return np.amax(en, 1) - self.initdG
-
-    def uniform_danglemismatch(self, seqs1, seqs2, fast=True):
-        if seqs1.shape != seqs2.shape:
-            if seqs1.ndim == 1:
-                seqs1 = endarray(
-                    np.repeat(np.array([seqs1]), seqs2.shape[0], 0),
-                    seqs1.endtype)
-            else:
-                raise ValueError(
-                    "Lengths of sequence arrays are not acceptable.")
-        assert seqs1.endtype == seqs2.endtype
-        endtype = seqs1.endtype
         s1 = tops(seqs1)
         s2 = tops(seqs2)
         l = s1.shape[1]
+
+        # s2r is revcomp pairseq of s2.
         s2r = np.fliplr(np.invert(s2) % 16)
         s2r = s2r // 4 + 4 * (s2r % 4)
-        m = np.zeros((s1.shape[0], 2 * np.sum(np.arange(2, l + 1)) + l + 1))
-        r = np.zeros(m.shape[0])
-        z = 0
-        if endtype == 'TD':
-            s1c = s1[:, 0:-1]
-            s2rc = s2r[:, 1:]
-            s1l = np.hstack(((4 * (s2r[:, 0] // 4) + s1[:, 0] // 4).reshape(
-                -1, 1), s1))
-            s2rl = np.hstack(
-                (s2r, (4 * (s2r[:, -1] % 4) + s1[:, -1] % 4).reshape(-1, 1)))
-        elif endtype == 'DT':
-            s1c = s1[:, 1:]
-            s2rc = s2r[:, 0:-1]
-            s2rl = np.hstack(((4 * (s1[:, 0] // 4) + s2r[:, 0] // 4).reshape(
-                -1, 1), s2r))
-            s1l = np.hstack(
-                (s1, (4 * (s1[:, -1] % 4) + s2r[:, -1] % 4).reshape(-1, 1)))
-        for o in range(1, l - 1):
-            zn = l - 1 - o
-            m[:, z:z + zn] = (
-                s1c[:, :-o] == s2rc[:, o:]) * self.nndG[s1c[:, :-o]]
-            z = z + zn + 2
-            m[:, z:z + zn] = (
-                s2rc[:, :-o] == s1c[:, o:]) * self.nndG[s2rc[:, :-o]]
-            z = z + zn + 2
-        m[:, z:z + l + 1] = (s1l == s2rl) * self.nndG[s1l]
-        from ._stickyext import fastsub
-        x = m
-        fastsub(x, r)
 
-        return r - self.initdG
+        alloffset_max = np.zeros(
+            s1.shape[0])  # store for max binding at any offset
+
+        s1_end = s1[:, :]
+        s2_end_rc = s2r[:, :]
+        
+        for offset in range(-l + 2, l - 1):
+            if offset > 0:
+                    # Energies of matching stacks, zero otherwise. Can be used
+                    # to check match.
+                ens = (s1_end[:, :-offset] == s2_end_rc[:, offset:]) * (
+                    -self.nndG[s1_end[:, :-offset]])
+                ltmm = -self.ltmmdG_5335[s1_end[:, :-offset] * 16
+                                         + s2_end_rc[:, offset:]]
+                rtmm = -self.rtmmdG_5335[s1_end[:, :-offset] * 16
+                                         + s2_end_rc[:, offset:]]
+                intmm = -self.intmmdG_5335[s1_end[:, :-offset] * 16
+                                           + s2_end_rc[:, offset:]]
+            elif offset == 0:
+                ens = (s1_end == s2_end_rc) * (-self.nndG[s1_end])
+                ltmm = np.zeros_like(ens)
+                rtmm = np.zeros_like(ens)
+                intmm = np.zeros_like(ens)
+                ltmm = -self.ltmmdG_5335[s1_end[:, :] * 16 + s2_end_rc[:, :]]
+                rtmm = -self.rtmmdG_5335[s1_end[:, :] * 16 + s2_end_rc[:, :]]
+                intmm = -self.intmmdG_5335[s1_end[:, :] * 16 + s2_end_rc[:, :]]
+            else:  # offset < 0
+                ens = (s1_end[:, -offset:] == s2_end_rc[:, :offset]) * (
+                    -self.nndG[s1_end[:, -offset:]])
+                ltmm = -self.ltmmdG_5335[s1_end[:, -offset:] * 16
+                                         + s2_end_rc[:, :offset]]
+                rtmm = -self.rtmmdG_5335[s1_end[:, -offset:] * 16
+                                         + s2_end_rc[:, :offset]]
+                intmm = -self.intmmdG_5335[s1_end[:, -offset:] * 16
+                                           + s2_end_rc[:, :offset]]
+            bindmax = np.zeros(ens.shape[0])
+            if debug:
+                print(offset, ens.view(np.ndarray), ltmm, rtmm, intmm)
+            for e in range(0, ens.shape[0]):
+                acc = 0
+                for i in range(0, ens.shape[1]):
+                    if ens[e, i] != 0:
+                        # we're matching. add the pair to the accumulator
+                        acc += ens[e, i]
+                    elif rtmm[e, i] != 0:
+                        # we're mismatching on the right: see if right-dangling
+                        # is highest binding so far, and continue, adding intmm
+                        # to accumulator.
+                        if acc + rtmm[e, i] > bindmax[e]:
+                            bindmax[e] = acc + rtmm[e, i]
+                        acc += intmm[e, i]
+                    elif ltmm[e, i] != 0 and i < ens.shape[1] - 1:
+                        # don't do this for the last pair we're mismatching on
+                        # the left: see if our ltmm is stronger than our
+                        # accumulated binding+intmm. If so, reset to ltmm and
+                        # continue as left-dangling, or reset to 0 if ltmm+next
+                        # is weaker than next dangle,or next is also a mismatch
+                        # (fixme: good idea?). If not, continue as internal
+                        # mismatch.
+                        if (not self.singlepair) and (ltmm[e, i] >
+                                                      acc + intmm[e, i]) and (
+                                                          ens[e, i + 1] > 0):
+                            acc = ltmm[e, i]
+                        elif (self.singlepair) and (ltmm[e, i] >
+                                                    acc + intmm[e, i]):
+                            acc = ltmm[e, i]
+                        else:
+                            acc += intmm[e, i]
+                    else:  # we're at a loop. Add stuff.
+                        acc -= p.looppenalty
+                bindmax[e] = max(bindmax[e], acc)
+            alloffset_max = np.maximum(alloffset_max, bindmax)
+        return alloffset_max - self.initdG

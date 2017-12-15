@@ -2,7 +2,6 @@ from __future__ import division
 import numpy as np
 import itertools
 import logging
-from math import ceil
 
 from .endclasses import endarray, lton, wc
 from .energetics_basic import EnergeticsBasic

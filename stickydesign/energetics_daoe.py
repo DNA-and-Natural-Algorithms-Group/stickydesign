@@ -8,9 +8,24 @@ from . import newparams as p
 
 
 class EnergeticsDAOE(object):
-    """Energy functions based on several sources, primarily SantaLucia's 2004
-paper, along with handling of dangles, tails, and nicks specifically for DX
-tile sticky ends.
+    """Energy functions based on several sources, primarily SantaLucia's
+    2004 paper, along with handling of dangles, tails, and nicks
+    specifically for DX tile sticky ends.
+
+    
+    Parameters
+    ----------
+    coaxparams : str or False, optional
+        choose the coaxial stacking parameters to use.  False is no coaxial
+        stacking adjustment, other options are 'protozanova', 'peyret',
+        and 'pyshni'.
+
+    singlepair : bool, optional
+        Treat single base pair pairing as possible (defaults
+        to False).
+
+    temperature : float, optional
+        Temperature to use for the model, in degress Celsius (defaults to 37).
 
     """
 
