@@ -14,9 +14,10 @@ def values_chunked(items, endtype, chunk_dim=10):
     Given a list of lists of acceptable numbers for each position in a row of
     an array, create every possible row, and return an iterator that returns
     chunks of every possible row up to chunk_dim, iterating dimensions higher
-    than chunk_dim.
+    than chunk_dim.  This probably doesn't need to be called directly, and may
+    have a _ added in the future.
 
-    Return this as an endarray, with set endtype. This can be easily removed
+    Return this as an endarray, with set endtype. This can be easily emoved
     for use elsewhere.
     """
     ilengths = [len(x) for x in items]
@@ -110,42 +111,64 @@ def find_end_set_uniform(endtype,
                          oldends=[],
                          alphabet='n'):
     """
-        Find a set of ends of uniform length and type satisfying uniform
-        constraint functions (eg, constrant functions are the same for each
-        end).
+    Find a set of ends of uniform length and type satisfying uniform
+    constraint functions (eg, constrant functions are the same for each
+    end).
 
-        * endtype: right now 'DT' for 3'-terminal ends, and 'TD' for
-          5'-terminal ends,
-        * length: length of ends, not including adjacents.
-        * adjacents (defaults to ['n','n']): acceptable bases for adjacents
-          (eg, ['n','n'] or ['c', 'c']) for the ends and their complements,
-        * num (defaults to 0): number of ends to find (0 keeps finding until
-          available ends are exhausted)
-        * numtries (defaults to 1): if > 1, the function will return a list of
-          sets of ends that all individually satisfy the constraints, so that
-          the best one can be selected manually
-        * spacefilter: a "spacefilter" function that takes endarrays and
-          filters them down to ends that, not considering spurious
-          interactions, are acceptable.
-        * endfilter: an "endfilter" function that takes current ends in the
-          set, available ends (filtered with current ends), and new ends added,
-          and filters the available ends, considering interactions between ends
-          (eg, spurious interactions).
-        * endchooser: an "endchooser" function that takes current ends in the
-          set and available ends, and returns a new end to add to the set.
-        * energetics: an "energyfunctions" class that provides the energy
-          functions for everything to use.
-        * oldends: an endarray of old ends to consider as part of the set
-        * alphabet: a single letter specifying what the alphabet for the ends
-          should be (eg, four or three-letter code)
-        * oldendfilter: a different "endfilter" function for use when filtering
-          the available ends using interactions with old ends. This is normally
-          not useful, but can be useful if you want, for example, to create a
-          sets with higher cross-interactions between two subsets than within
-          the two subsets.
+    This function is intended to be complicated and featureful. If you want
+    something simpler, try easy_ends
 
-        This function is intended to be complicated and featureful. If you want
-        something simpler, try easy_ends
+    Parameters
+    ----------
+
+    endtype : str
+      right now 'DT' for 3'-terminal ends, and 'TD' for
+      5'-terminal ends,
+    length : int
+      length of ends, not including adjacent bases, if applicable.
+    adjacents : list of str
+      (defaults to ['n','n']): acceptable bases for adjacents
+      (eg, ['n','n'] or ['c', 'c']) for the ends and their complements,
+    num : int
+      (defaults to 0): number of ends to find (0 keeps finding until
+      available ends are exhausted)
+    numtries : int
+      (defaults to 1): if > 1, the function will return a list of
+      sets of ends that all individually satisfy the constraints, so that
+      the best one can be selected manually
+    spacefilter: function
+        a "spacefilter" function that takes endarrays and
+        filters them down to ends that, not considering spurious
+        interactions, are acceptable.
+    endfilter: function
+        an "endfilter" function that takes current ends in the
+        set, available ends (filtered with current ends), and new ends added,
+        and filters the available ends, considering interactions between ends
+        (eg, spurious interactions).
+    endchooser : function
+        an "endchooser" function that takes current ends in the
+        set and available ends, and returns a new end to add to the set.
+    energetics : function
+        an "energyfunctions" class that provides the energy
+        functions for everything to use.
+    oldends : endarray
+        an endarray of old ends to consider as part of the set
+    alphabet : str
+        a single letter specifying what the alphabet for the ends
+        should be (eg, four or three-letter code)
+    oldendfilter : str
+        a different "endfilter" function for use when filtering
+        the available ends using interactions with old ends. This is normally
+        not useful, but can be useful if you want, for example, to create a
+        sets with higher cross-interactions between two subsets than within
+        the two subsets.
+
+
+    Returns
+    -------
+
+    endarray
+      an endarray of generated ends, including provided old ends
     """
     # Generate the template.
     if endtype == 'DT':

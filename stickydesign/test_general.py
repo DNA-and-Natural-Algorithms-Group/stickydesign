@@ -18,16 +18,7 @@ class test_energetics_daoe():
     def test_matching_energies_match(self):
         for s in self.sets:
             r1 = self.en.matching_uniform(s)
-            r2 = self.en.uniform_loopmismatch(s.ends, s.comps)
-            r3 = self.en.uniform_danglemismatch(s.ends, s.comps)
-            print(repr(s))
-            np.testing.assert_array_almost_equal(r1, r2)
-            np.testing.assert_array_almost_equal(r1, r3)
-
-    def test_matching_energies_match_combined(self):
-        for s in self.sets:
-            r1 = self.en.matching_uniform(s)
-            r2 = self.en.uniform_combinedmismatch(s.ends, s.comps)
+            r2 = self.en.uniform(s.ends, s.comps)
             print(repr(s))
             np.testing.assert_array_almost_equal(r1, r2)
 
