@@ -7,28 +7,25 @@ import warnings
 from . import newparams as p
 
 
-class EnergeticsDAOE(object):
+class EnergeticsBasic(object):
+
     """Energy functions based on several sources, primarily SantaLucia's
-    2004 paper, along with handling of dangles, tails, and nicks
-    specifically for DX tile sticky ends.
+       2004 paper.  This class uses the same parameters and algorithms
+       as EnergeticsDAOE, bet does not make DX-specific assumptions.
+       Instead, it assumes that each energy should simply be that of
+       two single strands attaching/detaching, without consideration
+       of nicks, stacking, or other effects related to the
+       beginning/end of each sequence.  Dangles and tails are still
+       included in mismatched binding calculations when appropriate.
 
-    
-    Parameters
-    ----------
-    coaxparams : str or False, optional
-        choose the coaxial stacking parameters to use.  False is no coaxial
-        stacking adjustment, other options are 'protozanova', 'peyret',
-        and 'pyshni'.
-
-    singlepair : bool, optional
-        Treat single base pair pairing as possible (defaults
-        to False).
-
-    temperature : float, optional
-        Temperature to use for the model, in degress Celsius (defaults to 37).
-
+       Relevant arguments:
+       
+       singlepair (bool, default False) --- treat single base pair pairings
+       as possible.
+       temperature (float in degrees Celsius, default 37) --- temperature
+       to use for the model, in C.
     """
-
+    
     def __init__(self,
                  temperature=37,
                  mismatchtype=None,
@@ -124,23 +121,7 @@ and is ignored.  The 'new'/'combined' method is now always used.")
 
         # In both cases here, the energy we want is the NN binding energy of
         # each stack,
-        if seqs.endtype == 'DT':
-            dcorr = np.zeros_like(self.dangle3dG[ps[:, 0]])
-            if self.danglecorr:
-                dcorr += -self.dangle3dG[ps[:, 0]] - self.dangle3dG[ps.revcomp(
-                )[:, 0]]
-            if self.coaxparams:
-                dcorr += self.coaxddG[ps[:, 0]] + self.coaxddG[ps.revcomp()[:,
-                                                                            0]]
-        elif seqs.endtype == 'TD':
-            dcorr = np.zeros_like(self.dangle5dG[ps[:, -1]])
-            if self.danglecorr:
-                dcorr += (-self.dangle5dG[ps[:, -1]] -
-                          self.dangle5dG[ps.revcomp()[:, -1]])
-            if self.coaxparams:
-                dcorr += self.coaxddG[ps[:, -1]] + self.coaxddG[ps.revcomp()
-                                                                [:, -1]]
-        return -(np.sum(self.nndG[ps], axis=1) + self.initdG + dcorr)
+        return -(np.sum(self.nndG[ps], axis=1) + self.initdG)
 
     def uniform(self, seqs1, seqs2, debug=False):
         if seqs1.shape != seqs2.shape:
@@ -151,9 +132,6 @@ and is ignored.  The 'new'/'combined' method is now always used.")
             else:
                 raise ValueError(
                     "Lengths of sequence arrays are not acceptable.")
-
-        assert seqs1.endtype == seqs2.endtype
-        endtype = seqs1.endtype
 
         s1 = tops(seqs1)
         s2 = tops(seqs2)
@@ -166,78 +144,23 @@ and is ignored.  The 'new'/'combined' method is now always used.")
         alloffset_max = np.zeros(
             s1.shape[0])  # store for max binding at any offset
 
-        if endtype == 'TD':
-            s1_end = s1[:, 0:-1]  #
-            s2_end_rc = s2r[:, 1:]
-            s1l = np.hstack(((4 * (s2r[:, 0] // 4) + s1[:, 0] // 4).reshape(
-                -1, 1), s1))
-            s2rl = np.hstack(
-                (s2r, (4 * (s2r[:, -1] % 4) + s1[:, -1] % 4).reshape(-1, 1)))
-        elif endtype == 'DT':
-            s1_end = s1[:, 1:]
-            s2_end_rc = s2r[:, 0:-1]
-            s2rl = np.hstack(((4 * (s1[:, 0] // 4) + s2r[:, 0] // 4).reshape(
-                -1, 1), s2r))
-            s1l = np.hstack(
-                (s1, (4 * (s1[:, -1] % 4) + s2r[:, -1] % 4).reshape(-1, 1)))
-
+        s1_end = s1[:, :]
+        s2_end_rc = s2r[:, :]
+        
         for offset in range(-l + 2, l - 1):
             if offset > 0:
-                if endtype == 'TD':
                     # Energies of matching stacks, zero otherwise. Can be used
                     # to check match.
-                    ens = (s1_end[:, :-offset] == s2_end_rc[:, offset:]) * (
-                        -self.nndG[s1_end[:, :-offset]])
-                    ens[:, 0] += (
-                        ens[:, 0] != 0) * (-self.dangle3dG[s1_end[:, -offset]]
-                                           )  # - for positive sign
-                    ens[:, -1] += (
-                        ens[:, -1] != 0) * (-self.dangle3dG[s2[:, -offset - 1]]
-                                            )  # - for positive sign
-                    ltmm = -self.ltmmdG_5335[s1_end[:, :-offset] * 16
-                                             + s2_end_rc[:, offset:]]
-                    rtmm = -self.rtmmdG_5335[s1_end[:, :-offset] * 16
-                                             + s2_end_rc[:, offset:]]
-                    intmm = -self.intmmdG_5335[s1_end[:, :-offset] * 16
-                                               + s2_end_rc[:, offset:]]
-                if endtype == 'DT':
-                    ens = (s1_end[:, offset:] == s2_end_rc[:, :-offset]) * (
-                        -self.nndG[s1_end[:, offset:]])
-                    ens[:, 0] += (ens[:, 0] != 0) * (
-                        -self.dangle5dG[s1_end[:, offset - 1]]
-                    )  # - for positive sign
-                    ens[:, -1] += (ens[:, -1] != 0) * (
-                        -self.dangle5dG[s2[:, offset]])  # - for positive sign
-                    ltmm = -self.ltmmdG_5335[s1_end[:, offset:] * 16
-                                             + s2_end_rc[:, :-offset]]
-                    rtmm = -self.rtmmdG_5335[s1_end[:, offset:] * 16
-                                             + s2_end_rc[:, :-offset]]
-                    intmm = -self.intmmdG_5335[s1_end[:, offset:] * 16
-                                               + s2_end_rc[:, :-offset]]
+                ens = (s1_end[:, :-offset] == s2_end_rc[:, offset:]) * (
+                    -self.nndG[s1_end[:, :-offset]])
+                ltmm = -self.ltmmdG_5335[s1_end[:, :-offset] * 16
+                                         + s2_end_rc[:, offset:]]
+                rtmm = -self.rtmmdG_5335[s1_end[:, :-offset] * 16
+                                         + s2_end_rc[:, offset:]]
+                intmm = -self.intmmdG_5335[s1_end[:, :-offset] * 16
+                                           + s2_end_rc[:, offset:]]
             elif offset == 0:
                 ens = (s1_end == s2_end_rc) * (-self.nndG[s1_end])
-                if endtype == 'DT':
-                    ens[:, 0] += (ens[:, 0] != 0) * (
-                        +self.dangle3dG[s1[:, 0]] -
-                        self.coaxparams * self.coaxddG[s1[:, 0]]) - (
-                            s1l[:, 0] == s2rl[:, 0]
-                        ) * self.nndG[s1l[:, 0]]  # sign reversed
-                    ens[:, -1] += (ens[:, -1] != 0) * (
-                        +self.dangle3dG[s2[:, 0]] -
-                        self.coaxparams * self.coaxddG[s2[:, 0]]) - (
-                            s1l[:, -1] == s2rl[:, -1]
-                        ) * self.nndG[s1l[:, -1]]  # sign reversed
-                if endtype == 'TD':
-                    ens[:, 0] += +(ens[:, 0] != 0) * (
-                        self.dangle5dG[s1[:, -1]] -
-                        self.coaxparams * self.coaxddG[s1[:, -1]]) - (
-                            s1l[:, 0] == s2rl[:, 0]
-                        ) * self.nndG[s1l[:, 0]]  # sign reversed
-                    ens[:, -1] += +(ens[:, -1] != 0) * (
-                        self.dangle5dG[s2[:, -1]] -
-                        self.coaxparams * self.coaxddG[s2[:, -1]]) - (
-                            s1l[:, -1] == s2rl[:, -1]
-                        ) * self.nndG[s1l[:, -1]]  # sign reversed
                 ltmm = np.zeros_like(ens)
                 rtmm = np.zeros_like(ens)
                 intmm = np.zeros_like(ens)
@@ -245,36 +168,14 @@ and is ignored.  The 'new'/'combined' method is now always used.")
                 rtmm = -self.rtmmdG_5335[s1_end[:, :] * 16 + s2_end_rc[:, :]]
                 intmm = -self.intmmdG_5335[s1_end[:, :] * 16 + s2_end_rc[:, :]]
             else:  # offset < 0
-                if endtype == 'TD':
-                    ens = (s1_end[:, -offset:] == s2_end_rc[:, :offset]) * (
-                        -self.nndG[s1_end[:, -offset:]])
-                    ens[:, 0] += (ens[:, 0] != 0) * (
-                        -self.nndG[s1[:, -1]] - p.tailcordG37 +
-                        self.dangle5dG[s1[:, -1]])  # - for positive sign
-                    ens[:, -1] += (ens[:, -1] != 0) * (
-                        -self.nndG[s2[:, -1]] - p.tailcordG37 +
-                        self.dangle5dG[s2[:, -1]])  # - for positive sign
-                    ltmm = -self.ltmmdG_5335[s1_end[:, -offset:] * 16
-                                             + s2_end_rc[:, :offset]]
-                    rtmm = -self.rtmmdG_5335[s1_end[:, -offset:] * 16
-                                             + s2_end_rc[:, :offset]]
-                    intmm = -self.intmmdG_5335[s1_end[:, -offset:] * 16
-                                               + s2_end_rc[:, :offset]]
-                elif endtype == 'DT':
-                    ens = (s1_end[:, :offset] == s2_end_rc[:, -offset:]) * (
-                        -self.nndG[s1_end[:, :offset]])
-                    ens[:, 0] += (ens[:, 0] != 0) * (
-                        -self.nndG[s1[:, 0]] - p.tailcordG37 +
-                        self.dangle3dG[s1[:, 0]])  # - for positive sign
-                    ens[:, -1] += (ens[:, -1] != 0) * (
-                        -self.nndG[s2[:, 0]] - p.tailcordG37 +
-                        self.dangle3dG[s2[:, 0]])  # - for positive sign
-                    ltmm = -self.ltmmdG_5335[s1_end[:, :offset] * 16
-                                             + s2_end_rc[:, -offset:]]
-                    rtmm = -self.rtmmdG_5335[s1_end[:, :offset] * 16
-                                             + s2_end_rc[:, -offset:]]
-                    intmm = -self.intmmdG_5335[s1_end[:, :offset] * 16
-                                               + s2_end_rc[:, -offset:]]
+                ens = (s1_end[:, -offset:] == s2_end_rc[:, :offset]) * (
+                    -self.nndG[s1_end[:, -offset:]])
+                ltmm = -self.ltmmdG_5335[s1_end[:, -offset:] * 16
+                                         + s2_end_rc[:, :offset]]
+                rtmm = -self.rtmmdG_5335[s1_end[:, -offset:] * 16
+                                         + s2_end_rc[:, :offset]]
+                intmm = -self.intmmdG_5335[s1_end[:, -offset:] * 16
+                                           + s2_end_rc[:, :offset]]
             bindmax = np.zeros(ens.shape[0])
             if debug:
                 print(offset, ens.view(np.ndarray), ltmm, rtmm, intmm)
