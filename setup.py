@@ -25,6 +25,7 @@ setup(
     setup_requires=['numpy'],
     packages=['stickydesign'],
     ext_modules=[stickyext],
+    cmdclass={'build_ext':build_ext},
     package_data={'stickydesign': ['params/dnastackingbig.csv']},
     author="Constantine Glen Evans",
     author_email="cevans@evans.foundation",
