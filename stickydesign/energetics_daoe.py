@@ -284,7 +284,7 @@ and is ignored.  The 'new'/'combined' method is now always used.")
                     if ens[e, i] != 0:
                         # we're matching. add the pair to the accumulator
                         acc += ens[e, i]
-                    elif rtmm[e, i] != 0:
+                    elif rtmm[e, i] != 0 and i > 0 and ens[e, i-1] > 0:
                         # we're mismatching on the right: see if right-dangling
                         # is highest binding so far, and continue, adding intmm
                         # to accumulator.

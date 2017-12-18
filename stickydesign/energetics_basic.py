@@ -147,7 +147,7 @@ and is ignored.  The 'new'/'combined' method is now always used.")
         s1_end = s1[:, :]
         s2_end_rc = s2r[:, :]
         
-        for offset in range(-l + 2, l - 1):
+        for offset in range(-l + 1, l):
             if offset > 0:
                     # Energies of matching stacks, zero otherwise. Can be used
                     # to check match.
@@ -185,10 +185,13 @@ and is ignored.  The 'new'/'combined' method is now always used.")
                     if ens[e, i] != 0:
                         # we're matching. add the pair to the accumulator
                         acc += ens[e, i]
-                    elif rtmm[e, i] != 0:
-                        # we're mismatching on the right: see if right-dangling
-                        # is highest binding so far, and continue, adding intmm
-                        # to accumulator.
+                    elif rtmm[e, i] != 0 and i > 0 and ens[e, i-1] > 0:
+                        # we're mismatching on the right: see if
+                        # right-dangling is highest binding so far,
+                        # and continue, adding intmm to accumulator.
+                        # Update: we only want to do this if the last
+                        # nnpair was bound, because otherwise, we
+                        # can't have a "right" mismatch.
                         if acc + rtmm[e, i] > bindmax[e]:
                             bindmax[e] = acc + rtmm[e, i]
                         acc += intmm[e, i]
@@ -212,5 +215,7 @@ and is ignored.  The 'new'/'combined' method is now always used.")
                     else:  # we're at a loop. Add stuff.
                         acc -= p.looppenalty
                 bindmax[e] = max(bindmax[e], acc)
+            if debug:
+                print(alloffset_max, bindmax)
             alloffset_max = np.maximum(alloffset_max, bindmax)
         return alloffset_max - self.initdG

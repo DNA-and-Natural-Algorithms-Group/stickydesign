@@ -98,6 +98,64 @@ def get_accept_set(endtype,
     return availends
 
 
+def _make_avail(endtype,
+                length,
+                spacefilter,
+                endfilter,
+                endchooser,
+                energetics,
+                adjacents=['n', 'n'],
+                num=0,
+                numtries=1,
+                oldendfilter=None,
+                oldends=[],
+                alphabet='n'):
+        # Generate the template.
+    if endtype == 'DT':
+        template = [lton[adjacents[0]]] + [lton[alphabet.lower()]] \
+                   * length + [lton[wc[adjacents[1]]]]
+    elif endtype == 'TD':
+        template = [lton[wc[adjacents[1]]]] + [lton[alphabet.lower()]] \
+                   * length + [lton[adjacents[0]]]
+    elif endtype == 'S':
+        template = [lton[alphabet.lower()]]*length
+    
+    LOGGER.info("Length {0}, type {1}, adjacents {2}, alphabet {3}.".format(
+        length, endtype, adjacents, alphabet))
+    LOGGER.debug("Have template {0}.".format(template, endtype))
+
+    # Create the chunk iterator
+    endchunk = values_chunked(template, endtype)
+
+    # Use spacefilter to filter chunks down to usable sequences
+    matcharrays = []
+    chunknum = 0
+    totchunks = None
+    totends = np.product([len(x) for x in template])
+    LOGGER.debug(
+        "Have {0} ends in total before any filtering.".format(totends))
+    for chunk in endchunk:
+        matcharrays.append(spacefilter(chunk, energetics))
+        if not totchunks:
+            totchunks = totends // len(chunk)
+        chunknum += 1
+        LOGGER.debug("Found {0} filtered ends in chunk {1} of {2}.".format(
+            len(matcharrays[-1]), chunknum, totchunks))
+    LOGGER.debug("Done with spacefiltering.")
+    availends = np.vstack(matcharrays).view(endarray)
+    availends.endtype = endtype
+
+    # Use endfilter to filter available sequences taking into account old
+    # sequences.
+    if len(oldends) > 0:
+        if oldendfilter:
+            availends = oldendfilter(oldends, None, availends, energetics)
+        else:
+            availends = endfilter(oldends, None, availends, energetics)
+
+    return availends
+
+
 def find_end_set_uniform(endtype,
                          length,
                          spacefilter,
@@ -109,7 +167,8 @@ def find_end_set_uniform(endtype,
                          numtries=1,
                          oldendfilter=None,
                          oldends=[],
-                         alphabet='n'):
+                         alphabet='n',
+                         _presetavail=False):
     """
     Find a set of ends of uniform length and type satisfying uniform
     constraint functions (eg, constrant functions are the same for each
@@ -162,7 +221,7 @@ def find_end_set_uniform(endtype,
         not useful, but can be useful if you want, for example, to create a
         sets with higher cross-interactions between two subsets than within
         the two subsets.
-
+    
 
     Returns
     -------
@@ -170,57 +229,32 @@ def find_end_set_uniform(endtype,
     endarray
       an endarray of generated ends, including provided old ends
     """
-    # Generate the template.
-    if endtype == 'DT':
-        template = [lton[adjacents[0]]] + [lton[alphabet.lower()]] \
-                   * length + [lton[wc[adjacents[1]]]]
-    elif endtype == 'TD':
-        template = [lton[wc[adjacents[1]]]] + [lton[alphabet.lower()]] \
-                   * length + [lton[adjacents[0]]]
-    elif endtype == 'S':
-        template = [lton[alphabet.lower()]]*length
-    
-    LOGGER.info("Length {0}, type {1}, adjacents {2}, alphabet {3}.".format(
-        length, endtype, adjacents, alphabet))
-    LOGGER.debug("Have template {0}.".format(template, endtype))
 
-    # Create the chunk iterator
-    endchunk = values_chunked(template, endtype)
-
-    # Use spacefilter to filter chunks down to usable sequences
-    matcharrays = []
-    chunknum = 0
-    totchunks = None
-    totends = np.product([len(x) for x in template])
-    LOGGER.debug(
-        "Have {0} ends in total before any filtering.".format(totends))
-    for chunk in endchunk:
-        matcharrays.append(spacefilter(chunk, energetics))
-        if not totchunks:
-            totchunks = totends // len(chunk)
-        chunknum += 1
-        LOGGER.debug("Found {0} filtered ends in chunk {1} of {2}.".format(
-            len(matcharrays[-1]), chunknum, totchunks))
-    LOGGER.debug("Done with spacefiltering.")
-    availends = np.vstack(matcharrays).view(endarray)
-    availends.endtype = endtype
-
-    # Use endfilter to filter available sequences taking into account old
-    # sequences.
     if len(oldends) > 0:
         if type(oldends[0]) is str:
             oldends = endarray(oldends, endtype)
-        if oldendfilter:
-            availends = oldendfilter(oldends, None, availends, energetics)
-        else:
-            availends = endfilter(oldends, None, availends, energetics)
-
-    startavail = availends
+    
+    if isinstance(_presetavail, endarray):
+        startavail = _presetavail
+    else:
+        startavail = _make_avail(endtype,
+                                 length,
+                                 spacefilter,
+                                 endfilter,
+                                 endchooser,
+                                 energetics,
+                                 adjacents,
+                                 num,
+                                 numtries,
+                                 oldendfilter,
+                                 oldends,
+                                 alphabet)
     endsets = []
+    availends = startavail.copy()
     LOGGER.debug("Starting with {0} ends.".format(len(availends)))
     while len(endsets) < numtries:
         curends = oldends
-        availends = startavail
+        availends = startavail.copy()
         numends = 0
         while True:
             newend = endarray(
@@ -237,8 +271,7 @@ def find_end_set_uniform(endtype,
             else:
                 curends = curends.append(newend)
             numends += 1
-            LOGGER.debug("Now have {0} ends in set, and {1} ends available.".
-                          format(numends, len(availends)))
+            LOGGER.debug("Now have {0} ends in set, and {1} ends available.".format(numends, len(availends)))
             if len(availends) == 0:
                 LOGGER.info("Found {0} ends.".format(numends))
                 break
@@ -285,7 +318,10 @@ def find_end_set_uniform(endtype,
     if len(endsets) > 1:
         return endsets
     else:
-        return endsets[0]
+        if _presetavail is None or isinstance(_presetavail,endarray):
+            return endsets[0], startavail
+        else:
+            return endsets[0]
 
 
 def enhist(endtype,
@@ -377,7 +413,8 @@ def easyends(endtype,
              adjs=['n', 'n'],
              energetics=None,
              alphabet='n',
-             echoose=None):
+             echoose=None,
+             _presetavail=False):
     """
     Easyends is an attempt at creating an easy-to-use function for finding sets
     of ends.
@@ -455,7 +492,8 @@ def easyends(endtype,
         oldends=oldends,
         adjacents=adjs,
         num=number,
-        alphabet=alphabet)
+        alphabet=alphabet,
+        _presetavail=_presetavail)
 
 
 def easy_space(endtype,
@@ -494,7 +532,7 @@ def easy_space(endtype,
     sfilt = spacefilter_standard(interaction, interaction * fdev,
                                  maxendspurious)
     spacefilter = sfilt
-    efilt = endfilter_standard_advanced(maxcompspurious, maxendspurious)
+
     if not echoose:
         echoose = endchooser_standard(interaction)
 

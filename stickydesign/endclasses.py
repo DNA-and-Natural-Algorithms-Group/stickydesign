@@ -58,6 +58,10 @@ class endarray(np.ndarray):
         elif self.endtype == 'S':
             return (3 - self)[:, ::-1][:, :]
 
+    @property
+    def fcomps(self):
+        return (3-self)[:, ::-1]
+        
     def concat(a1, a2):
         assert a1.endtype == a2.endtype
 

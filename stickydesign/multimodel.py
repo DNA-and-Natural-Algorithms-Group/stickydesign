@@ -10,7 +10,8 @@ def endchooser(all_energetics,
                target_vals=None,
                templates=None,
                init_wigglefraction=1,
-               next_wigglefraction=0.1):
+               next_wigglefraction=0.1,
+               devmethod='dev'):
     """
     An endchooser generator that chooses ends while trying to optimize for
     multiple energy models simultaneously.
@@ -53,7 +54,7 @@ def endchooser(all_energetics,
                     en.matching_uniform(currentends[0:1])
                     for en in all_energetics
                 ]
-                LOGGER.debug(target_vals)
+                LOGGER.debug("TVALS {}".format(target_vals))
             availfiltered = availends
             if templates:
                 t = next(templates)
@@ -62,13 +63,20 @@ def endchooser(all_energetics,
                     if nt != 'n':
                         availfiltered = availfiltered[availfiltered[:, i] ==
                                                       lton[nt], :]
-            dev = np.sqrt(
-                np.sum(
-                    np.array([
-                        en.matching_uniform(availfiltered) - target_val
-                        for en, target_val in zip(all_energetics, target_vals)
-                    ])**2,
-                    axis=0))
+            if devmethod == 'dev':
+                dev = np.sqrt(
+                    np.sum(
+                        np.array([
+                            en.matching_uniform(availfiltered) - target_val
+                            for en, target_val in zip(all_energetics, target_vals)
+                        ])**2,
+                        axis=0))
+            elif devmethod == 'max':
+                dev = np.max(np.abs(
+                        np.array([
+                            en.matching_uniform(availfiltered) - target_val
+                            for en, target_val in zip(all_energetics, target_vals)
+                        ])), axis=0)
             choices = np.argsort(dev)
             choice = choices[np.random.randint(
                 0, max(1, ceil(len(choices) * next_wigglefraction)))]
@@ -85,13 +93,19 @@ def endchooser(all_energetics,
     return endchooser
 
 
-def deviation_score(all_ends, all_energetics):
-    return np.sqrt(
-        np.sum(
-            np.var(
-                [
-                    np.concatenate(
-                        tuple(en.matching_uniform(ends) for ends in all_ends))
-                    for en in all_energetics
-                ],
-                axis=1)))
+def deviation_score(all_ends, all_energetics, devmethod='dev'):
+
+    if devmethod == 'dev':
+        return np.sqrt(
+            np.sum(
+                np.var(
+                    [
+                        np.concatenate(
+                            tuple(en.matching_uniform(ends) for ends in all_ends))
+                        for en in all_energetics
+                    ],
+                    axis=1)))
+    elif devmethod == 'max':
+        return np.max([np.ptp(np.concatenate(
+            tuple(en.matching_uniform(ends) for ends in all_ends)))
+            for en in all_energetics])
