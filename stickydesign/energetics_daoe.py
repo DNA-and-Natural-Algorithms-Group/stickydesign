@@ -2,7 +2,6 @@ from __future__ import division
 import numpy as np
 from .endclasses import pairseqa, tops, endarray, Energetics
 from .version import __version__
-import warnings
 
 from . import newparams as p
 

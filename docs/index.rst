@@ -10,6 +10,11 @@ Welcome to stickydesign's documentation!
    :maxdepth: 2
    :caption: Contents:
 
+   intro
+   algorithms
+   energymodels
+   extending
+   changelog
 
 
 Indices and tables

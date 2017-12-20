@@ -58,14 +58,15 @@ please let us know.
 
 The stickydesign package has inline documentation available for all of its functions, which provide details on the use of each function. 
 
-Lists of sticky end sequences are held in `endarray` classes. These contain the sequences themselves, the adjacent bases on both sides (the base itself on the end side, the complement of the base on the other side), and a end *type*. The end type specifies what the edges of the ends look like, and currently has two possible values: 
+Lists of sticky end sequences are held in `endarray` classes. These contain the sequences themselves, the adjacent bases on both sides (the base itself on the end side, the complement of the base on the other side), and a end *type*. The end type specifies what the edges of the ends look like, and currently has three possible values: 
 
 * 'DT', for ends where the 5' end continues to a double-stranded (D) region and the 3' end is terminal (T), and
 * 'TD', for ends where the 5' end is terminal (T), and the 3' end continues to a double-stranded region (D).
+* 'S', for 'ends' that are really just sequences, where nothing is assumed about the adjacent regions.
 
 As examples, a usual DAO-E tile will have two DT ends and two TD ends, while a DAO-O tile will have all of the same type (eg, NAoMI-B has four TD ends). Other end types, to support things like single-stranded tiles and toeholds for branch migration, are still being considered.
 
-To get end and complement sequences along with their adjacent nucleotide, use the `.ends` or `.comps` properties of the class.
+To get end and complement sequences along with their adjacent nucleotide, use the `.ends` or `.comps` properties of the class.  (For 'S', these will just return the sequence and complement.)
 
 For usual sequence design, the `easyends` function provides a simple but configurable interface to the sequence design code. At its simplest level, for example, trying to design ten sticky ends (each with a complement included) of type DT, and using the defaults for target interaction energy and maximum non-orthogonal binding, you might do the following (in iPython, with In showing user input and Out showing Python output):
 
