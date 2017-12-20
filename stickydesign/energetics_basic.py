@@ -1,13 +1,13 @@
 from __future__ import division
 import numpy as np
-from .endclasses import pairseqa, tops, endarray
+from .endclasses import pairseqa, tops, endarray, Energetics
 from .version import __version__
 import warnings
 
 from . import newparams as p
 
 
-class EnergeticsBasic(object):
+class EnergeticsBasic(Energetics):
 
     """Energy functions based on several sources, primarily SantaLucia's
        2004 paper.  This class uses the same parameters and algorithms
@@ -28,7 +28,6 @@ class EnergeticsBasic(object):
     
     def __init__(self,
                  temperature=37,
-                 mismatchtype=None,
                  coaxparams=False,
                  singlepair=False,
                  danglecorr=True,
@@ -38,11 +37,6 @@ class EnergeticsBasic(object):
         self.singlepair = singlepair
         self.danglecorr = danglecorr
         self.temperature = temperature
-
-        if mismatchtype:
-            warnings.warn("Mismatchtype has been deprecated in EnergeticsDAOE \
-and is ignored.  The 'new'/'combined' method is now always used.")
-        self.setup_params(temperature)
 
     @property
     def info(self):
@@ -54,6 +48,15 @@ and is ignored.  The 'new'/'combined' method is now always used.")
                 'version': __version__}
         return info
 
+    @property
+    def temperature(self):
+        return self._temperature
+
+    @temperature.setter
+    def temperature(self, val):
+        self._temperature = val
+        self._setup_params(val)
+    
     def __str__(self):
         return "EnergeticsDAOE(" + \
             ", ".join("{}={}".format(x, repr(y))
@@ -63,7 +66,7 @@ and is ignored.  The 'new'/'combined' method is now always used.")
     def __repr__(self):
         return self.__str__()
     
-    def setup_params(self, temperature=37):
+    def _setup_params(self, temperature=37):
         self.initdG = p.initdG37 - (temperature - 37) * p.initdS
         self.nndG = p.nndG37 - (temperature - 37) * p.nndS
         if self.coaxparams == 'protozanova' or self.coaxparams is True:
@@ -117,6 +120,7 @@ and is ignored.  The 'new'/'combined' method is now always used.")
                                                         + j * 4 + (3 - k)]
 
     def matching_uniform(self, seqs):
+        assert seqs.endtype == 'S'
         ps = pairseqa(seqs)
 
         # In both cases here, the energy we want is the NN binding energy of
@@ -124,6 +128,8 @@ and is ignored.  The 'new'/'combined' method is now always used.")
         return -(np.sum(self.nndG[ps], axis=1) + self.initdG)
 
     def uniform(self, seqs1, seqs2, debug=False):
+        assert seqs1.endtype == seqs2.endtype
+        assert seqs1.endtype == 'S'
         if seqs1.shape != seqs2.shape:
             if seqs1.ndim == 1:
                 seqs1 = endarray(

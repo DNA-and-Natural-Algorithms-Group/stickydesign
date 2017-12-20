@@ -1,13 +1,13 @@
 from __future__ import division
 import numpy as np
-from .endclasses import pairseqa, tops, endarray
+from .endclasses import pairseqa, tops, endarray, Energetics
 from .version import __version__
 import warnings
 
 from . import newparams as p
 
 
-class EnergeticsDAOE(object):
+class EnergeticsDAOE(Energetics):
     """Energy functions based on several sources, primarily SantaLucia's
     2004 paper, along with handling of dangles, tails, and nicks
     specifically for DX tile sticky ends.
@@ -42,11 +42,6 @@ class EnergeticsDAOE(object):
         self.danglecorr = danglecorr
         self.temperature = temperature
 
-        if mismatchtype:
-            warnings.warn("Mismatchtype has been deprecated in EnergeticsDAOE \
-and is ignored.  The 'new'/'combined' method is now always used.")
-        self.setup_params(temperature)
-
     @property
     def info(self):
         info = {'enclass': 'EnergeticsDAOE',
@@ -57,6 +52,15 @@ and is ignored.  The 'new'/'combined' method is now always used.")
                 'version': __version__}
         return info
 
+    @property
+    def temperature(self):
+        return self._temperature
+
+    @temperature.setter
+    def temperature(self, val):
+        self._temperature = val
+        self._setup_params(val)
+    
     def __str__(self):
         return "EnergeticsDAOE(" + \
             ", ".join("{}={}".format(x, repr(y))
@@ -66,7 +70,7 @@ and is ignored.  The 'new'/'combined' method is now always used.")
     def __repr__(self):
         return self.__str__()
     
-    def setup_params(self, temperature=37):
+    def _setup_params(self, temperature=37):
         self.initdG = p.initdG37 - (temperature - 37) * p.initdS
         self.nndG = p.nndG37 - (temperature - 37) * p.nndS
         if self.coaxparams == 'protozanova' or self.coaxparams is True:
@@ -140,6 +144,8 @@ and is ignored.  The 'new'/'combined' method is now always used.")
             if self.coaxparams:
                 dcorr += self.coaxddG[ps[:, -1]] + self.coaxddG[ps.revcomp()
                                                                 [:, -1]]
+        else:
+            raise NotImplementedError
         return -(np.sum(self.nndG[ps], axis=1) + self.initdG + dcorr)
 
     def uniform(self, seqs1, seqs2, debug=False):
@@ -180,6 +186,8 @@ and is ignored.  The 'new'/'combined' method is now always used.")
                 -1, 1), s2r))
             s1l = np.hstack(
                 (s1, (4 * (s1[:, -1] % 4) + s2r[:, -1] % 4).reshape(-1, 1)))
+        else:
+            raise NotImplementedError
 
         for offset in range(-l + 2, l - 1):
             if offset > 0:

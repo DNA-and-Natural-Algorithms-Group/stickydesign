@@ -1,6 +1,10 @@
 import numpy as np
 
 
+class Energetics(object):
+    pass
+
+
 class pairseqa(np.ndarray):
     def __new__(cls, array):
         obj = (4 * array[:, :-1] + array[:, 1:]).view(cls)
