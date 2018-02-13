@@ -414,6 +414,7 @@ def easyends(endtype,
              energetics=None,
              alphabet='n',
              echoose=None,
+             absolute=False,
              _presetavail=False):
     """
     Easyends is an attempt at creating an easy-to-use function for finding sets
@@ -450,6 +451,8 @@ def easyends(endtype,
       the set.
     * adjacents (default ['n','n']): allowable adjacent bases for ends and
       complements.
+    * absolute (default False): fdev, maxspurious, and maxendspurious to be
+      interpreted as absolute kcal/mol values rather than fractional values.
     * energetics (optional): an energetics class providing the energy
       calculation functions. You probably don't need to change this.
     * alphabet (default 'n'): The alphabet to use for ends, allowing
@@ -469,13 +472,18 @@ def easyends(endtype,
             alphabet=alphabet)[2]['emedian']
         LOGGER.info("Calculated optimal interaction energy is {0}.".format(
             interaction))
-    maxcompspurious = maxspurious * interaction
-    if not maxendspurious:
-        maxendspurious = maxspurious * interaction
+    if not absolute:
+        mult = interaction
     else:
-        maxendspurious = maxendspurious * interaction
+        mult = 1.0
+        
+    maxcompspurious = maxspurious * mult
+    if not maxendspurious:
+        maxendspurious = maxspurious * mult
+    else:
+        maxendspurious = maxendspurious * mult
 
-    sfilt = spacefilter_standard(interaction, interaction * fdev,
+    sfilt = spacefilter_standard(interaction, mult * fdev,
                                  maxendspurious)
     efilt = endfilter_standard_advanced(maxcompspurious, maxendspurious)
     if not echoose:

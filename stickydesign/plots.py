@@ -56,6 +56,39 @@ def hist_multi(all_ends,
     fig.tight_layout(rect=[0, 0.3, 1, 0.97])
     return fig
 
+def box_multi(all_ends,
+              all_energetics,
+              energetics_names=None,
+              title="", **kwargs):
+    fig = pylab.figure(figsize=(10, 15))
+    a = fig.subplots(1, 1)
+    a.boxplot(
+        [
+            np.concatenate(tuple(en.matching_uniform(y) for y in all_ends))
+            for en in all_energetics
+        ],
+        labels=energetics_names, sym='r.',
+        **kwargs)
+    a.set_ylabel("$ΔG_{se}$ (kcal/mol)")
+
+    v = []
+    for en in all_energetics:
+        l = []
+        for y in all_ends:
+            x = np.ma.masked_array(energy_array_uniform(y, en))
+            i = np.arange(0,len(x)//2)
+            x[i,len(x)//2+i]=np.ma.masked
+            x[np.tril_indices_from(x,-1)]=np.ma.masked
+            l.append(x.compressed())
+        v.append(np.concatenate(tuple(l)))
+    
+    a.boxplot(v, sym='bP', labels=energetics_names, **kwargs)
+
+    if title:
+        fig.suptitle(title)
+    fig.tight_layout(rect=[0, 0.3, 1, 0.97])
+    return fig
+
 
 def heatmap(ends, energetics, title="", **kwargs):
     fig = pylab.figure()
@@ -67,3 +100,34 @@ def heatmap(ends, energetics, title="", **kwargs):
     pylab.title(title)
 
     return fig
+
+
+def _multi_data_pandas(ends, all_energetics, energetics_names=None):
+    """From a list of endarrays, make two Pandas DataFrames: one of
+    matching energies, the other of spurious/mismatch energies.
+
+    Returns
+    -------
+
+    match : pandas.DataFrame
+        matching energies
+
+    mismatch: pandas.DataFrame
+        mismatch energies
+    """
+    import pandas as pd
+    match = np.array([np.concatenate(
+        [e.matching_uniform(x) for x in ends]) for e in all_energetics]).T
+    match = pd.DataFrame(match, columns=energetics_names)
+    
+    v = []
+    for en in all_energetics:
+        l = []
+        for y in ends:
+            x = np.ma.masked_array(energy_array_uniform(y, en))
+            i = np.arange(0, len(x)//2)
+            x[i, len(x)//2+i] = np.ma.masked
+            x[np.tril_indices_from(x, -1)] = np.ma.masked
+            l.append(x.compressed())
+        v.append(np.concatenate(tuple(l)))
+    return match, pd.DataFrame(np.array(v).T, columns=energetics_names)
