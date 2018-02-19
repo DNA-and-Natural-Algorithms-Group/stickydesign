@@ -1,5 +1,5 @@
 import numpy as np
-from matplotlib import pylab
+
 
 from .stickydesign import energy_array_uniform
 
@@ -8,6 +8,7 @@ def hist_multi(all_ends,
                all_energetics,
                energetics_names=None,
                title="", **kwargs):
+    from matplotlib import pylab
     fig = pylab.figure(figsize=(10, 15))
     a, b, c = fig.subplots(3, 1)
     a.hist(
@@ -60,6 +61,7 @@ def box_multi(all_ends,
               all_energetics,
               energetics_names=None,
               title="", **kwargs):
+    from matplotlib import pylab
     fig = pylab.figure(figsize=(10, 15))
     a = fig.subplots(1, 1)
     a.boxplot(
@@ -91,6 +93,7 @@ def box_multi(all_ends,
 
 
 def heatmap(ends, energetics, title="", **kwargs):
+    from matplotlib import pylab
     fig = pylab.figure()
 
     heat = energy_array_uniform(ends, energetics)
