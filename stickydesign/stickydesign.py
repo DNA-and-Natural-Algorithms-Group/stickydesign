@@ -57,7 +57,7 @@ def get_accept_set(endtype,
                    alphabet='n',
                    energetics=None):
     if not energetics:
-        energetics = EnergeticsBasic(mismatchtype='max')
+        energetics = EnergeticsBasic()
     if not spacefilter:
         spacefilter = spacefilter_standard(interaction, interaction * fdev,
                                            maxendspurious)
@@ -342,7 +342,7 @@ def enhist(endtype,
         template = [lton[alphabet.lower()]]*length
     
     if not energetics:
-        energetics = EnergeticsBasic(mismatchtype='max')
+        energetics = EnergeticsBasic()
 
     minbin = 0.8 * energetics.matching_uniform(
         endarray([([0, 3] * length)[0:length + 2]], endtype))
@@ -460,7 +460,7 @@ def easyends(endtype,
     """
 
     if not energetics:
-        efunc = EnergeticsBasic(mismatchtype='max')
+        efunc = EnergeticsBasic()
     else:
         efunc = energetics
     if (not interaction) or (interaction == 0):
@@ -518,7 +518,7 @@ def easy_space(endtype,
                echoose=None):
     length = endlength
     if not energetics:
-        efunc = EnergeticsBasic(mismatchtype='max')
+        efunc = EnergeticsBasic()
         energetics = efunc
     else:
         efunc = energetics
