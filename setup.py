@@ -27,7 +27,7 @@ setup(
     package_dir = {
         'stickydesign': 'stickydesign',
         'stickydesign.stickydesign2': 'stickydesign/stickydesign2'
-        }
+        },
     packages=['stickydesign', 'stickydesign.stickydesign2'],
     ext_modules=[stickyext],
     cmdclass={'build_ext':build_ext},
