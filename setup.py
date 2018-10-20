@@ -22,9 +22,13 @@ stickyext = Extension(
 # run the setup
 setup(
     name='stickydesign',
-    version='0.8.0',
+    version='0.8.1',
     setup_requires=['numpy'],
-    packages=['stickydesign'],
+    package_dir = {
+        'stickydesign': 'stickydesign',
+        'stickydesign.stickydesign2': 'stickydesign/stickydesign2'
+        }
+    packages=['stickydesign', 'stickydesign.stickydesign2'],
     ext_modules=[stickyext],
     cmdclass={'build_ext':build_ext},
     package_data={'stickydesign': ['params/dnastackingbig.csv']},
