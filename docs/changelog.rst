@@ -1,6 +1,13 @@
 Changelog
 ==========
 
+0.8.0
+-----
+
+Major changes:
+
+* Added stickydesign2 (used internally by alhambra)
+
 0.7.0
 -----
 
