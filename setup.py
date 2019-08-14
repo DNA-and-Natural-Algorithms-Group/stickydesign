@@ -6,8 +6,8 @@ class build_ext(_build_ext):
     def finalize_options(self):
         _build_ext.finalize_options(self)
         # Prevent numpy from thinking it is still in its setup process:
-        import builtins # NOQA
-        builtins.__NUMPY_SETUP__ = False
+        # import builtins # NOQA
+        __builtins__.__NUMPY_SETUP__ = False
         import numpy # NOQA
         self.include_dirs.append(numpy.get_include())
 
@@ -22,7 +22,7 @@ stickyext = Extension(
 # run the setup
 setup(
     name='stickydesign',
-    version='0.8.1',
+    version='0.8.2',
     setup_requires=['numpy'],
     package_dir = {
         'stickydesign': 'stickydesign',
