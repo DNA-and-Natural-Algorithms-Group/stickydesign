@@ -1,3 +1,5 @@
+[![Build Status](https://travis-ci.org/DNA-and-Natural-Algorithms-Group/stickydesign.svg?branch=master)](https://travis-ci.org/DNA-and-Natural-Algorithms-Group/stickydesign)
+
 The StickyDesign Sticky End Sequence Design Package
 ===================================================
 
