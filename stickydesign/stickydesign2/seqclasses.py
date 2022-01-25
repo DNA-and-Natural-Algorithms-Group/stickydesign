@@ -12,7 +12,7 @@ _BSA_TO_SA = np.ma.masked_array(
 _BSA_TO_SA_ARRAYS = np.array([
     np.array([0b1 & x, 0b10 & x, 0b100 & x,
               0b1000 & x]).nonzero()[0].astype(np.uint8) for x in range(0, 16)
-])
+], dtype=object)
 
 def seqconcat(s1, s2):
     if isinstance(s1, SeqArrayBase) and isinstance(s2, SeqArrayBase):
