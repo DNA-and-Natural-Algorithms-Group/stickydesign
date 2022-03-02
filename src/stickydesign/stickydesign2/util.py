@@ -1,4 +1,4 @@
-from . import endclasses as ec
+from . import seqclasses as sc
 import numpy as np
 
 

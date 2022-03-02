@@ -3,7 +3,7 @@ import numpy as np
 _REVBITS4 = np.array(
     [0, 8, 4, 12, 2, 10, 6, 14, 1, 9, 5, 13, 3, 11, 7, 15], dtype=np.uint8)
 
-_BSA_TO_SA = np.ma.masked_array(
+_BSA_TO_SA: np.ma.MaskedArray = np.ma.masked_array(
     data=[9, 0, 1, 9, 2, 9, 9, 9, 3] + [9] * 7,
     mask=[True, False, False, True, False, True, True, True, False] +
     [True] * 7,

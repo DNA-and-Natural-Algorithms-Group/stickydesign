@@ -1,6 +1,16 @@
 Changelog
 ==========
 
+0.8.3
+-----
+
+* Python and numpy updates.
+
+0.8.1 - 0.8.2
+-------------
+
+* Minor fixes and updates.
+
 0.8.0
 -----
 

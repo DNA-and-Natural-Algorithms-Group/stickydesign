@@ -73,7 +73,7 @@ def get_accept_set(endtype,
 
     LOGGER.info("Length {0}, type {1}, adjacents {2}, alphabet {3}.".format(
         length, endtype, adjacents, alphabet))
-    LOGGER.debug("Have template {0}.".format(template, endtype))
+    LOGGER.debug("Have template %s, endtype %s.", template, endtype)
 
     # Create the chunk iterator
     endchunk = values_chunked(template, endtype)
@@ -122,7 +122,7 @@ def _make_avail(endtype,
     
     LOGGER.info("Length {0}, type {1}, adjacents {2}, alphabet {3}.".format(
         length, endtype, adjacents, alphabet))
-    LOGGER.debug("Have template {0}.".format(template, endtype))
+    LOGGER.debug("Have template %s, endtype %s", template, endtype)
 
     # Create the chunk iterator
     endchunk = values_chunked(template, endtype)
