@@ -1,0 +1,16 @@
+cff-version: 1.2.0
+preferred-citation:
+  authors:
+    - family-names: Evans
+      given-names: Constantine Glen
+      orcid: 
+  title: "DNA Sticky End Design and Assignment for Robust Algorithmic Self-assembly"
+  type: article
+  doi: 10.1007/978-3-319-01928-4_5
+  journal: DNA 2013, LNCS 8141
+  date-released: 2013
+  pages: "61-75"
+
+
+
+

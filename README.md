@@ -5,13 +5,12 @@ Status](https://img.shields.io/github/workflow/status/DNA-and-Natural-Algorithms
 ![PyPI](https://img.shields.io/pypi/v/stickydesign)
 [![PyPI - Python Version](https://img.shields.io/pypi/pyversions/stickydesign)](https://pypi.org/project/qslib/)
 
-The StickyDesign Sticky End Sequence Design Package
-===================================================
+The StickyDesign Sticky End Sequence Designer
+=============================================
 
 # Introduction
 
-StickyDesign is a Python package developed by the Winfree lab at
-Caltech (http://dna.caltech.edu) for designing sticky end sequences
+StickyDesign is a Python package for designing sticky end sequences
 for DNA tile systems, especially systems using DX and other tile
 structures where sticky ends in a single tile are separated by
 double-stranded regions (better support for single stranded tiles is
@@ -107,10 +106,15 @@ For 'S' type ends, use EnergeticsBasic in place of EnergeticsDAOE; this is now t
 
 To change parameters for the energetics classes, see the documentation for those classes: for example, temperature (in Celsius) can be specified using, eg, `EnergeticsBasic(temperature=33)`.
 
-# About
+# About and citations
 
-StickyDesign and related software is a project of the Winfree lab at Caltech[2]. It is currently maintained by Constantine Evans (cge@dna.caltech.edu).
+Stickydesign was developed at the Winfree lab at Caltech (https://dna.caltech.edu) and is maintained by Constantine Evans (https://evansfmm.org/cge).
 
-[1](http://ipython.org)
-[2](http://dna.caltech.edu)
+You can cite stickydesign with the following paper:
+
+```bibtex
+@article{Evans_2013, title={DNA Sticky End Design and Assignment for Robust Algorithmic Self-assembly}, ISBN={http://id.crossref.org/isbn/978-3-319-01928-4}, ISSN={1611-3349}, url={http://dx.doi.org/10.1007/978-3-319-01928-4_5}, DOI={10.1007/978-3-319-01928-4_5}, journal={Lecture Notes in Computer Science}, publisher={Springer Science + Business Media}, author={Evans, Constantine G. and Winfree, Erik}, year={2013}, pages={61â75}}
+```
+
+
 
