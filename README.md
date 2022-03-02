@@ -3,7 +3,6 @@
 ![GitHub Workflow
 Status](https://img.shields.io/github/workflow/status/DNA-and-Natural-Algorithms-Group/stickydesign/Tests)
 ![PyPI](https://img.shields.io/pypi/v/stickydesign)
-[![PyPI - Python Version](https://img.shields.io/pypi/pyversions/stickydesign)](https://pypi.org/project/qslib/)
 
 The StickyDesign Sticky End Sequence Designer
 =============================================

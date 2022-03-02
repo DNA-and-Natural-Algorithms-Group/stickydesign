@@ -21,7 +21,7 @@ stickyext = Extension(
 # run the setup
 setup(
     name='stickydesign',
-    version='0.8.3.pre1',
+    version='0.8.3',
     setup_requires=['numpy'],
     install_requires=['numpy'],
     extras_require={'testing': ['pytest-cov', 'pytest']},
