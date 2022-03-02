@@ -21,16 +21,10 @@ ecosystem for Python, and also uses a small Python C extension to
 greatly accelerate energetics calculations. As such, it likely
 requires a minimum:
 
-* Python >= 2.6 (Python 3.6 or higher recommended)
+* Python >= 3.8
 * Numpy
-* Scipy
 * A working C compiler setup
 * Python development headers
-
-The easiest way to ensure the installation of these requirements is to
-use a scientific Python distribution like Enthought or Anaconda; the
-Scipy website has a [list of these
-distributions](http://scipy.org/install.html).
 
 # Installation
 
