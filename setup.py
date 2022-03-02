@@ -22,7 +22,7 @@ stickyext = Extension(
 # run the setup
 setup(
     name='stickydesign',
-    version='0.8.2',
+    version='0.8.3.pre1',
     setup_requires=['numpy'],
     install_requires=['numpy'],
     package_dir = {
