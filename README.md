@@ -1,4 +1,9 @@
-[![Build Status](https://travis-ci.org/DNA-and-Natural-Algorithms-Group/stickydesign.svg?branch=master)](https://travis-ci.org/DNA-and-Natural-Algorithms-Group/stickydesign)
+[![Documentation Status](https://readthedocs.org/projects/qslib/badge/?version=latest)](https://stickydesign.readthedocs.io/en/latest/?badge=latest)
+![Codecov](https://img.shields.io/codecov/c/github/DNA-and-Natural-Algorithms-Group/stickydesign)
+![GitHub Workflow
+Status](https://img.shields.io/github/workflow/status/DNA-and-Natural-Algorithms-Group/stickydesign/Tests)
+![PyPI](https://img.shields.io/pypi/v/stickydesign)
+[![PyPI - Python Version](https://img.shields.io/pypi/pyversions/stickydesign)](https://pypi.org/project/qslib/)
 
 The StickyDesign Sticky End Sequence Design Package
 ===================================================
