@@ -1,5 +1,6 @@
 from setuptools import setup, Extension
-from setuptools.command.build_ext import build_ext
+import numpy
+# from setuptools.command.build_ext import _build_ext
 
 
 # class build_ext(_build_ext):
@@ -15,9 +16,8 @@ from setuptools.command.build_ext import build_ext
 # define the extension module
 stickyext = Extension(
     'stickydesign._stickyext',
-    sources=['src/stickydesign/_stickyext.c'])
-
-#    include_dirs=[numpy.get_include()])
+    sources=['src/stickydesign/_stickyext.c'],
+    include_dirs=[numpy.get_include()])
 
 # run the setup
 setup(
