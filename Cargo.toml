@@ -1,0 +1,21 @@
+[package]
+name = "stickydesign-accel"
+version = "0.9.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[lib]
+name = "stickydesign_accel"
+path = "src/lib.rs"
+crate-type = ["cdylib"]
+
+[features]
+use_rayon = ["rayon"]
+
+[dependencies]
+rayon = { version = "1", optional = true }
+ndarray = {version = "0.15", features = ["approx", "blas", "serde"]}
+numpy = {version = "0.17"}
+pyo3 = {version = "0.17", features = ["extension-module", "auto-initialize"]}
+
