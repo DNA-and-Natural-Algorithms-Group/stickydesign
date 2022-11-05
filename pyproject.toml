@@ -4,12 +4,22 @@ build-backend = "maturin"
 
 [project]
 name = 'stickydesign-accel'
-dependencies = ['numpy']
+description = "Accelerated functions in Rust for stickydesign."
+dependencies = ['numpy', 'stickydesign ~= 0.9.0.a1']
 version = "0.9.0.a1"
 authors = [ {name = "Constantine Evans", email = "const@costi.eu"} ]
+license = {text = "BSD 3-Clause"}
+classifiers = [
+     "Development Status :: 3 - Alpha",
+     "Programming Language :: Python :: 3",
+     "Programming Language :: Rust",
+     "License :: OSI Approved :: BSD License",
+     "Intended Audience :: Science/Research",
+     "Topic :: Scientific/Engineering"
+]
 
 [project.urls]
-repository = "github.com/cgevans/stickydesign-accel"
+repository = "https://github.com/cgevans/stickydesign-accel"
 
 [project.optional-dependencies]
 test = [
