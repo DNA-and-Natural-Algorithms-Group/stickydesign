@@ -1,6 +1,13 @@
 Changelog
 ==========
 
+0.9.0a1
+-------
+
+* Deprecated the old C extension.  This greatly simplifies the build system, but for now, disables EnergeticsBasicOld.
+* Moved to a setup.cfg and pyproject.toml build system with setuptools.
+* Created a new package, stickydesign-accel, that contains Rust extensions to accelerate the newer EnergeticsBasic.  When installed, this gives a significant (around 20x, I think) speedup.
+
 0.8.3
 -----
 

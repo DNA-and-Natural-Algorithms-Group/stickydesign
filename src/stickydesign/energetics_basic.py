@@ -5,6 +5,52 @@ from .version import __version__
 
 from . import newparams as p
 
+try:
+    from stickydesign_accel import rust_tightloop, fastuniform
+    ACCEL = True
+except ImportError:
+    ACCEL = False
+
+def py_tightloop(ens, ltmm, rtmm, intmm, singlepair, looppenalty):
+    bindmax = np.zeros(ens.shape[0])
+    for e in range(0, ens.shape[0]):
+        acc = 0
+        for i in range(0, ens.shape[1]):
+            if ens[e, i] != 0:
+                # we're matching. add the pair to the accumulator
+                acc += ens[e, i]
+            elif rtmm[e, i] != 0 and i > 0 and ens[e, i-1] > 0:
+                # we're mismatching on the right: see if
+                # right-dangling is highest binding so far,
+                # and continue, adding intmm to accumulator.
+                # Update: we only want to do this if the last
+                # nnpair was bound, because otherwise, we
+                # can't have a "right" mismatch.
+                if acc + rtmm[e, i] > bindmax[e]:
+                    bindmax[e] = acc + rtmm[e, i]
+                acc += intmm[e, i]
+            elif ltmm[e, i] != 0 and i < ens.shape[1] - 1:
+                # don't do this for the last pair we're mismatching on
+                # the left: see if our ltmm is stronger than our
+                # accumulated binding+intmm. If so, reset to ltmm and
+                # continue as left-dangling, or reset to 0 if ltmm+next
+                # is weaker than next dangle,or next is also a mismatch
+                # (fixme: good idea?). If not, continue as internal
+                # mismatch.
+                if (not singlepair) and (ltmm[e, i] >
+                                                acc + intmm[e, i]) and (
+                                                    ens[e, i + 1] > 0):
+                    acc = ltmm[e, i]
+                elif (singlepair) and (ltmm[e, i] >
+                                            acc + intmm[e, i]):
+                    acc = ltmm[e, i]
+                else:
+                    acc += intmm[e, i]
+            else:  # we're at a loop. Add stuff.
+                acc -= looppenalty
+        bindmax[e] = max(bindmax[e], acc)
+    return bindmax
+
 
 class EnergeticsBasic(Energetics):
 
@@ -31,11 +77,24 @@ class EnergeticsBasic(Energetics):
                  singlepair=False,
                  danglecorr=True,
                  version=None,
-                 enclass=None):
+                 enclass=None,
+                 _tightloop=None,
+                 _accel=None):
         self.coaxparams = coaxparams
         self.singlepair = singlepair
         self.danglecorr = danglecorr
         self.temperature = temperature
+
+        if _accel is None:
+            self._accel = ACCEL
+        if _tightloop is None:
+            _tightloop = ACCEL
+        if _accel or _tightloop:
+            if not ACCEL:
+                raise ImportError("Accelerated functions not available: install stickydesign-accel.")
+
+        self._tightloop = rust_tightloop if _tightloop else py_tightloop
+        self._accel = _accel
 
     @property
     def info(self):
@@ -137,7 +196,12 @@ class EnergeticsBasic(Energetics):
             else:
                 raise ValueError(
                     "Lengths of sequence arrays are not acceptable.")
+        if not self._accel:
+             return self._uniform(seqs1, seqs2, debug=debug)
+        else:
+            return fastuniform(seqs1, seqs2, -self.nndG, -self.ltmmdG_5335, -self.rtmmdG_5335, -self.intmmdG_5335, p.looppenalty, self.singlepair, self.initdG)
 
+    def _uniform(self, seqs1, seqs2, debug=False):
         s1 = tops(seqs1)
         s2 = tops(seqs2)
         l = s1.shape[1]
@@ -181,45 +245,9 @@ class EnergeticsBasic(Energetics):
                                          + s2_end_rc[:, :offset]]
                 intmm = -self.intmmdG_5335[s1_end[:, -offset:] * 16
                                            + s2_end_rc[:, :offset]]
-            bindmax = np.zeros(ens.shape[0])
             if debug:
                 print(offset, ens.view(np.ndarray), ltmm, rtmm, intmm)
-            for e in range(0, ens.shape[0]):
-                acc = 0
-                for i in range(0, ens.shape[1]):
-                    if ens[e, i] != 0:
-                        # we're matching. add the pair to the accumulator
-                        acc += ens[e, i]
-                    elif rtmm[e, i] != 0 and i > 0 and ens[e, i-1] > 0:
-                        # we're mismatching on the right: see if
-                        # right-dangling is highest binding so far,
-                        # and continue, adding intmm to accumulator.
-                        # Update: we only want to do this if the last
-                        # nnpair was bound, because otherwise, we
-                        # can't have a "right" mismatch.
-                        if acc + rtmm[e, i] > bindmax[e]:
-                            bindmax[e] = acc + rtmm[e, i]
-                        acc += intmm[e, i]
-                    elif ltmm[e, i] != 0 and i < ens.shape[1] - 1:
-                        # don't do this for the last pair we're mismatching on
-                        # the left: see if our ltmm is stronger than our
-                        # accumulated binding+intmm. If so, reset to ltmm and
-                        # continue as left-dangling, or reset to 0 if ltmm+next
-                        # is weaker than next dangle,or next is also a mismatch
-                        # (fixme: good idea?). If not, continue as internal
-                        # mismatch.
-                        if (not self.singlepair) and (ltmm[e, i] >
-                                                      acc + intmm[e, i]) and (
-                                                          ens[e, i + 1] > 0):
-                            acc = ltmm[e, i]
-                        elif (self.singlepair) and (ltmm[e, i] >
-                                                    acc + intmm[e, i]):
-                            acc = ltmm[e, i]
-                        else:
-                            acc += intmm[e, i]
-                    else:  # we're at a loop. Add stuff.
-                        acc -= p.looppenalty
-                bindmax[e] = max(bindmax[e], acc)
+            bindmax = self._tightloop(ens, ltmm, rtmm, intmm, self.singlepair, p.looppenalty)
             if debug:
                 print(alloffset_max, bindmax)
             alloffset_max = np.maximum(alloffset_max, bindmax)

@@ -1,5 +1,4 @@
 from stickydesign import energetics_daoe
-from stickydesign import energetics_basic_old
 from stickydesign import energetics_basic
 from stickydesign import endarray
 import pytest
@@ -26,7 +25,9 @@ def en_daoe():
     return energetics_daoe.EnergeticsDAOE()
 
 @pytest.fixture()
+@pytest.mark.skip(reason="Disabled old acceleration.")
 def en_basicold():
+    from stickydesign import energetics_basic_old
     return energetics_basic_old.EnergeticsBasicOld()
 
 @pytest.fixture()
@@ -60,6 +61,7 @@ def test_basic_symmetry(sets_basic, en_basic):
         r2 = en_basic.uniform(s[50:], s[:50])
         np.testing.assert_array_almost_equal(r1, r2)
 
+@pytest.mark.skip(reason="Disabled old acceleration.")
 def test_basic_old_matching_energies_match(sets_daoe, en_basicold):
     for s in sets_daoe:
         r1 = en_basicold.matching_uniform(s)
@@ -69,6 +71,7 @@ def test_basic_old_matching_energies_match(sets_daoe, en_basicold):
         np.testing.assert_array_almost_equal(r1, r2)
         np.testing.assert_array_almost_equal(r1, r3)
 
+@pytest.mark.skip(reason="Disabled old acceleration.")
 def test_basic_old_symmetry(sets_daoe, en_basicold):
     for s in sets_daoe:
         r1 = en_basicold.uniform(s[:50], s[50:])
