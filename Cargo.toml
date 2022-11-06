@@ -17,5 +17,5 @@ use_rayon = ["rayon"]
 rayon = { version = "1", optional = true }
 ndarray = {version = "0.15", features = ["approx", "blas", "serde"]}
 numpy = {version = "0.17"}
-pyo3 = {version = "0.17", features = ["extension-module", "auto-initialize"]}
+pyo3 = {version = "0.17", features = ["extension-module"]}
 
