@@ -1,6 +1,11 @@
 Changelog
 ==========
 
+0.7.1
+-----
+
+Updated release to support more recent versions of Numpy.
+
 0.7.0
 -----
 
