@@ -120,7 +120,7 @@ intmmdS = np.array([1.7,   4.6,  -2.3,   0.0,
 dangle5dS = (dangle5dH - dangle5dG37) / 310.15
 dangle3dS = (dangle3dH - dangle3dG37) / 310.15
 initdG37 = 1.96
-initdS = 0.0057
+initdS = -0.0057
 tailcordG37 = 0.8
 looppenalty = 3.6
 
