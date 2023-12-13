@@ -235,12 +235,12 @@ class EnergeticsDAOE(Energetics):
                             s1l[:, -1] == s2rl[:, -1]
                         ) * self.nndG[s1l[:, -1]]  # sign reversed
                 if endtype == 'TD':
-                    ens[:, 0] += +(ens[:, 0] != 0) * (
+                    ens[:, 0] += (ens[:, 0] != 0) * (
                         self.dangle5dG[s1[:, -1]] -
                         self.coaxparams * self.coaxddG[s1[:, -1]]) - (
                             s1l[:, 0] == s2rl[:, 0]
                         ) * self.nndG[s1l[:, 0]]  # sign reversed
-                    ens[:, -1] += +(ens[:, -1] != 0) * (
+                    ens[:, -1] += (ens[:, -1] != 0) * (
                         self.dangle5dG[s2[:, -1]] -
                         self.coaxparams * self.coaxddG[s2[:, -1]]) - (
                             s1l[:, -1] == s2rl[:, -1]
