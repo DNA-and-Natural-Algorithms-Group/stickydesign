@@ -1,3 +1,4 @@
+#![allow(non_snake_case)]
 use ndarray::{s, Array1, Array2, ArrayView2, Axis, Zip};
 use numpy::{
     IntoPyArray, PyArray1, PyArray2, PyReadonlyArray1, PyReadonlyArray2,
