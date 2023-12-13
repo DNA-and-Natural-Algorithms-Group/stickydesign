@@ -1,6 +1,31 @@
 use ndarray::{s, Array1, Array2, ArrayView2, Axis, Zip};
-use numpy::{IntoPyArray, PyArray1, PyArray2, PyReadonlyArray1, PyReadonlyArray2};
+use numpy::{
+    IntoPyArray, PyArray1, PyArray2, PyReadonlyArray1, PyReadonlyArray2,
+};
 use pyo3::prelude::*;
+
+#[pyfunction]
+fn fastsub(x: &PyArray2<f64>, r: &PyArray1<f64>) {
+    let xro = x.readonly();
+    let mut rrw = r.readwrite();
+    let x = xro.as_array();
+    let r = rrw.as_array_mut();
+
+    Zip::from(x.rows()).and(r).for_each(|xr, rr| {
+        let mut d = 0.0;
+        let mut g = 0.0;
+        xr.for_each(|&xv| {
+            d += xv;
+            if xv == 0.0 {
+                if d > g {
+                    g = d;
+                };
+                d = 0.0;
+            }
+        });
+        *rr = g;
+    });
+}
 
 #[pyfunction]
 fn pytops<'py>(s: PyReadonlyArray2<u8>, py: Python<'py>) -> &'py PyArray2<u8> {
@@ -170,5 +195,6 @@ fn stickydesign_accel(_py: Python, m: &PyModule) -> PyResult<()> {
     m.add_wrapped(wrap_pyfunction!(pytops))?;
     m.add_wrapped(wrap_pyfunction!(fastuniform))?;
     m.add_wrapped(wrap_pyfunction!(pytorps))?;
+    m.add_wrapped(wrap_pyfunction!(fastsub))?;
     Ok(())
 }
