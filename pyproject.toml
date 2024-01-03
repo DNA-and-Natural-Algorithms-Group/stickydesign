@@ -3,7 +3,7 @@
 # SPDX-License-Identifier: EUPL-1.2
 
 [build-system]
-requires = ["setuptools>=42", "wheel"]
+requires = ["setuptools>=61", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [tool.mypy]
@@ -13,9 +13,12 @@ warn_unused_configs = true
 ignore_missing_imports = true
 
 [tool.pytest.ini_options]
-addopts = "--cov qslib --cov-report term-missing --verbose"
+addopts = "--cov stickydesign --cov-report term-missing --verbose"
 norecursedirs = ["dist", "build", ".tox"]
 testpaths = ["tests"]
+
+[tool.setuptools.package-data]
+"stickydesign.params" = ["*.csv"]
 
 [project]
 name = "stickydesign"
