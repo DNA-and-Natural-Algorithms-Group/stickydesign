@@ -4,3 +4,5 @@ __pycache__
 *.so
 dist/*	
 *.egg
+/target
+/Cargo.lock
