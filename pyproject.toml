@@ -42,7 +42,7 @@ where = ["src"]
 
 [project.optional-dependencies]
 accel = ["stickydesign-accel == 0.9.0.a2"]
-tests = ["pytest-cov", "pytest-benchmark", "pytest"]
+tests = ["pytest-cov", "pytest-benchmark", "pytest", "hypothesis"]
 
 
 # packages = ["stickydesign", "stickydesign.stickydesign2"]
