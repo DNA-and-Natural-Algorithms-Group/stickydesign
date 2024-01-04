@@ -3,13 +3,19 @@ import numpy as np
 
 from .stickydesign import energy_array_uniform
 
+def _import_pyplot():
+    global plt
+    try:
+        from matplotlib import pyplot as plt
+    except ImportError:
+        raise ImportError("matplotlib is required for plotting functions")
 
 def hist_multi(all_ends,
                all_energetics,
                energetics_names=None,
                title="", **kwargs):
-    from matplotlib import pylab
-    fig = pylab.figure(figsize=(10, 15))
+    _import_pyplot()
+    fig = plt.figure(figsize=(10, 15))
     a, b, c = fig.subplots(3, 1)
     a.hist(
         [
@@ -61,8 +67,8 @@ def box_multi(all_ends,
               all_energetics,
               energetics_names=None,
               title="", **kwargs):
-    from matplotlib import pylab
-    fig = pylab.figure(figsize=(10, 15))
+    _import_pyplot()
+    fig = plt.figure(figsize=(10, 15))
     a = fig.subplots(1, 1)
     a.boxplot(
         [
@@ -93,14 +99,14 @@ def box_multi(all_ends,
 
 
 def heatmap(ends, energetics, title="", **kwargs):
-    from matplotlib import pylab
-    fig = pylab.figure()
+    _import_pyplot()
+    fig = plt.figure()
 
     heat = energy_array_uniform(ends, energetics)
 
-    pylab.imshow(heat)
-    pylab.colorbar()
-    pylab.title(title)
+    plt.imshow(heat)
+    plt.colorbar()
+    plt.title(title)
 
     return fig
 
@@ -118,7 +124,10 @@ def _multi_data_pandas(ends, all_energetics, energetics_names=None):
     mismatch: pandas.DataFrame
         mismatch energies
     """
-    import pandas as pd
+    try:
+        import pandas as pd
+    except ImportError:
+        raise ImportError("pandas is required for _multi_data_pandas")
     match = np.array([np.concatenate(
         [e.matching_uniform(x) for x in ends]) for e in all_energetics]).T
     match = pd.DataFrame(match, columns=energetics_names)

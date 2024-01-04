@@ -7,7 +7,7 @@ name = 'stickydesign-accel'
 description = "Accelerated functions in Rust for stickydesign."
 dependencies = ['numpy', 'stickydesign ~= 0.9.0.a2']
 version = "0.9.0.a2"
-authors = [ {name = "Constantine Evans", email = "const@costi.eu"} ]
+authors = [ {name = "Constantine Evans", email = "const@costi.net"} ]
 license = {text = "BSD 3-Clause"}
 classifiers = [
      "Development Status :: 3 - Alpha",
@@ -19,7 +19,11 @@ classifiers = [
 ]
 
 [project.urls]
-repository = "https://github.com/cgevans/stickydesign-accel"
+homepage = "https://dna.caltech.edu/StickyDesign"
+source = "https://github.com/DNA-and-Natural-Algorithms-Group/stickydesign"
+tracker = "https://github.com/DNA-and-Natural-Algorithms-Group/stickydesign/issues"
+download = "https://github.com/DNA-and-Natural-Algorithms-Group/stickydesign/releases"
+changelog = "https://github.com/DNA-and-Natural-Algorithms-Group/stickydesign/blob/master/docs/changelog.rst" 
 
 [project.optional-dependencies]
 test = [

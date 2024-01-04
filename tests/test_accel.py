@@ -7,18 +7,18 @@ from numpy.testing import assert_array_equal
 #import hypothesis
 
 @pytest.fixture
-def random_seqs_with_complements() -> sd.endarray:
+def random_seqs_with_complements() -> sd.EndArray:
     L = 10
     N = 50
-    e = sd.endarray(["".join(random.choices("acgt", k=L)) for _ in range(N)], 'S')
+    e = sd.EndArray(["".join(random.choices("acgt", k=L)) for _ in range(N)], 'S')
     e = e.append(e.comps)
     return e
 
 @pytest.fixture
-def seqarr(random_seqs_with_complements) -> tuple[sd.endarray, sd.endarray]:
+def seqarr(random_seqs_with_complements) -> tuple[sd.EndArray, sd.EndArray]:
     rsc = random_seqs_with_complements
-    a = cast(sd.endarray, np.repeat(rsc, rsc.shape[0], 0))
-    b = cast(sd.endarray, np.tile(rsc, (rsc.shape[0], 1)))
+    a = cast(sd.EndArray, np.repeat(rsc, rsc.shape[0], 0))
+    b = cast(sd.EndArray, np.tile(rsc, (rsc.shape[0], 1)))
     return a, b
 
 @pytest.fixture

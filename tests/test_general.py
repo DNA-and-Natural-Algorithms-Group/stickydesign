@@ -1,24 +1,24 @@
 from stickydesign import energetics_daoe
 from stickydesign import energetics_basic
-from stickydesign import endarray
+from stickydesign import EndArray
 import pytest
 import numpy as np
 from stickydesign.energetics_basic import ACCEL
 
 @pytest.fixture()
 def sets_daoe():
-        r5dt = endarray(np.random.randint(low=0, high=4, size=(100, 7)), 'DT')
-        r5td = endarray(np.random.randint(low=0, high=4, size=(100, 7)), 'TD')
-        r10dt = endarray(
+        r5dt = EndArray(np.random.randint(low=0, high=4, size=(100, 7)), 'DT')
+        r5td = EndArray(np.random.randint(low=0, high=4, size=(100, 7)), 'TD')
+        r10dt = EndArray(
             np.random.randint(low=0, high=4, size=(100, 12)), 'DT')
-        r10td = endarray(
+        r10td = EndArray(
             np.random.randint(low=0, high=4, size=(100, 12)), 'TD')
         return [r5dt, r5td, r10dt, r10td]
 
 @pytest.fixture()
 def sets_basic():
-    r7s = endarray(np.random.randint(low=0, high=4, size=(100, 7)), 'S')
-    r12s = endarray(np.random.randint(low=0, high=4, size=(100, 12)), 'S')
+    r7s = EndArray(np.random.randint(low=0, high=4, size=(100, 7)), 'S')
+    r12s = EndArray(np.random.randint(low=0, high=4, size=(100, 12)), 'S')
     return [r7s, r12s]
 
 @pytest.fixture()

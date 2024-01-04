@@ -1,12 +1,16 @@
-from __future__ import division
 import numpy as np
 import itertools
 import logging
+from typing import Literal, Optional, TypeVar
+from collections.abc import Callable
+from collections.abc import Sequence
 
-from .endclasses import endarray, lton, wc
+from .endclasses import EndArray, lton, wc, Energetics, EndTypes
 from .energetics_basic import EnergeticsBasic
 
 LOGGER = logging.getLogger(__name__)
+
+EndChooserType: TypeVar = Callable[[EndArray, EndArray, Energetics], np.ndarray]
 
 __all__ = [
     'values_chunked', 'get_accept_set', 'find_end_set_uniform',
@@ -43,7 +47,7 @@ def values_chunked(items, endtype, chunk_dim=10):
         outer = outer_iter()
 
     chunk = np.zeros(
-        [np.prod(ilengths[p:]), len(items)], dtype=int).view(endarray)
+        [np.prod(ilengths[p:]), len(items)], dtype=int).view(EndArray)
     chunk.endtype = endtype
     chunk[:, p:] = np.indices(ilengths[p:]).reshape(q, -1).T
     for i in range(p, n):
@@ -53,8 +57,8 @@ def values_chunked(items, endtype, chunk_dim=10):
         yield chunk
 
 
-def get_accept_set(endtype,
-                   length,
+def get_accept_set(endtype: EndTypes,
+                   length: int,
                    interaction,
                    fdev,
                    maxendspurious,
@@ -99,13 +103,13 @@ def get_accept_set(endtype,
         LOGGER.debug("Found {0} filtered ends in chunk {1} of {2}.".format(
             len(matcharrays[-1]), chunknum, totchunks))
     LOGGER.debug("Done with spacefiltering.")
-    availends = np.vstack(matcharrays).view(endarray)
+    availends = np.vstack(matcharrays).view(EndArray)
     availends.endtype = endtype
     return availends
 
 
-def _make_avail(endtype,
-                length,
+def _make_avail(endtype: EndTypes,
+                length: int,
                 spacefilter,
                 endfilter,
                 endchooser,
@@ -148,7 +152,7 @@ def _make_avail(endtype,
         LOGGER.debug("Found {0} filtered ends in chunk {1} of {2}.".format(
             len(matcharrays[-1]), chunknum, totchunks))
     LOGGER.debug("Done with spacefiltering.")
-    availends = np.vstack(matcharrays).view(endarray)
+    availends = np.vstack(matcharrays).view(EndArray)
     availends.endtype = endtype
 
     # Use endfilter to filter available sequences taking into account old
@@ -236,11 +240,10 @@ def find_end_set_uniform(endtype,
       an endarray of generated ends, including provided old ends
     """
 
-    if len(oldends) > 0:
-        if type(oldends[0]) is str:
-            oldends = endarray(oldends, endtype)
+    if (len(oldends) > 0) and isinstance(oldends[0], str):
+        oldends = EndArray(oldends, endtype)
     
-    if isinstance(_presetavail, endarray):
+    if isinstance(_presetavail, EndArray):
         startavail = _presetavail
     else:
         startavail = _make_avail(endtype,
@@ -257,22 +260,20 @@ def find_end_set_uniform(endtype,
                                  alphabet)
     endsets = []
     availends = startavail.copy()
-    LOGGER.debug("Starting with {0} ends.".format(len(availends)))
+    LOGGER.debug("Starting with %d ends.", len(availends))
     while len(endsets) < numtries:
         curends = oldends
         availends = startavail.copy()
         numends = 0
         while True:
-            newend = endarray(
+            newend = EndArray(
                 np.array([endchooser(curends, availends, energetics)]),
                 endtype)
             LOGGER.debug("Chose end {0}.".format(repr(newend)))
             newend.endtype = endtype
             availends = endfilter(newend, curends, availends, energetics)
             LOGGER.debug("Done filtering.")
-            if curends is None:
-                curends = newend
-            elif len(curends) == 0:
+            if (curends is None) or (len(curends) == 0):
                 curends = newend
             else:
                 curends = curends.append(newend)
@@ -324,7 +325,7 @@ def find_end_set_uniform(endtype,
     if len(endsets) > 1:
         return endsets
     else:
-        if _presetavail is None or isinstance(_presetavail,endarray):
+        if _presetavail is None or isinstance(_presetavail,EndArray):
             return endsets[0], startavail
         else:
             return endsets[0]
@@ -351,9 +352,9 @@ def enhist(endtype,
         energetics = EnergeticsBasic()
 
     minbin = 0.8 * energetics.matching_uniform(
-        endarray([([0, 3] * length)[0:length + 2]], endtype))
+        EndArray([([0, 3] * length)[0:length + 2]], endtype))
     maxbin = 1.1 * energetics.matching_uniform(
-        endarray([([1, 2] * length)[0:length + 2]], endtype))
+        EndArray([([1, 2] * length)[0:length + 2]], endtype))
 
     if not bins:
         bins = np.arange(minbin, maxbin, 0.1)
@@ -407,24 +408,23 @@ def enhist(endtype,
     return (hist, bins, info)
 
 
-def easyends(endtype,
-             endlength,
-             number=0,
-             interaction=None,
-             fdev=0.05,
-             maxspurious=0.5,
-             maxendspurious=None,
-             tries=1,
-             oldends=[],
-             adjs=['n', 'n'],
+def easyends(endtype: EndTypes,
+             endlength: int,
+             number: int = 0,
+             interaction: Optional[int] =None,
+             fdev: float=0.05,
+             maxspurious: float=0.5,
+             maxendspurious: Optional[float]=None,
+             tries: int=1,
+             oldends: Sequence[str]=[],
+             adjs: Sequence[str]=['n', 'n'],
              energetics=None,
-             alphabet='n',
-             echoose=None,
-             absolute=False,
+             alphabet: str='n',
+             echoose: Optional[EndChooserType] = None,
+             absolute: bool = False,
              _presetavail=False):
     """
-    Easyends is an attempt at creating an easy-to-use function for finding sets
-    of ends.
+    Easyends is an attempt at creating an easy-to-use function for finding sets of ends.
 
     * endtype: specifies the type of end being considered. The system for
       classifying end types goes from 5' to 3', and consists of letters
@@ -433,7 +433,7 @@ def easyends(endtype,
       would be 'DT', while one that starts at the beginning of a strand on the
       5' side and ends in a double-stranded region would be 'TD'. 'T' stands
       for terminal, 'D' stands for double-stranded region, and 'S' stands for
-      single-stranded region. 'S', however, is not currently supported.
+      single-stranded region.
     * endlength: specifies the length of end being considered, not including
       adjacent bases.
     * number (optional): specifies the number of ends to find.  If zero or not
@@ -464,11 +464,7 @@ def easyends(endtype,
     * alphabet (default 'n'): The alphabet to use for ends, allowing
       for three-letter codes.
     """
-
-    if not energetics:
-        efunc = EnergeticsBasic()
-    else:
-        efunc = energetics
+    efunc = energetics if energetics is not None else EnergeticsBasic()
     if (not interaction) or (interaction == 0):
         interaction = enhist(
             endtype,
@@ -476,18 +472,11 @@ def easyends(endtype,
             energetics=efunc,
             adjacents=adjs,
             alphabet=alphabet)[2]['emedian']
-        LOGGER.info("Calculated optimal interaction energy is {0}.".format(
-            interaction))
-    if not absolute:
-        mult = interaction
-    else:
-        mult = 1.0
+        LOGGER.info("Calculated optimal interaction energy is %s.", interaction)
+    mult = interaction if not absolute else 1.0
         
     maxcompspurious = maxspurious * mult
-    if not maxendspurious:
-        maxendspurious = maxspurious * mult
-    else:
-        maxendspurious = maxendspurious * mult
+    maxendspurious = maxspurious * mult if maxendspurious is None else maxendspurious * mult
 
     sfilt = spacefilter_standard(interaction, mult * fdev,
                                  maxendspurious)
@@ -577,7 +566,7 @@ def easy_space(endtype,
         LOGGER.debug("Found {0} filtered ends in chunk {1} of {2}.".format(
             len(matcharrays[-1]), chunknum, totchunks))
     LOGGER.debug("Done with spacefiltering.")
-    availends = np.vstack(matcharrays).view(endarray)
+    availends = np.vstack(matcharrays).view(EndArray)
     availends.endtype = endtype
 
     availendsr = np.repeat(availends, len(availends), axis=0)
@@ -691,11 +680,8 @@ def endfilter_standard_advanced(maxcompspurious, maxendspurious):
     return endfilter
 
 
-def energy_array_uniform(seqs, energetics):
-    """
-    Given an endarray and a set of sequences, return an array of the
-    interactions between them, including their complements.
-    """
+def energy_array_uniform(seqs: EndArray, energetics):
+    """Given an endarray and a set of sequences, return an array of the interactions between them, including their complements."""
     seqs = seqs.ends.append(seqs.comps)
     return energetics.uniform(
         np.repeat(seqs, seqs.shape[0], 0), np.tile(
@@ -703,12 +689,9 @@ def energy_array_uniform(seqs, energetics):
 
 
 def endchooser_standard(desint, wiggle=0.0):
-    """
-    An endchooser function: return a random end with end-comp energy closest to
-    desint.
-    """
+    """Return a random end with end-comp energy closest to desint, subject to some wiggle."""
 
-    def endchooser(currentends, availends, energetics):
+    def endchooser(currentends: EndArray, availends: EndArray, energetics: Energetics):
         ddiff = np.abs(energetics.matching_uniform(availends) - desint)
         choices = np.flatnonzero(ddiff <= np.amin(ddiff)+wiggle)
         newend = availends[choices[np.random.randint(0, len(choices))]]
@@ -718,12 +701,9 @@ def endchooser_standard(desint, wiggle=0.0):
 
 
 def endchooser_random():
-    """
-    An endchooser function: return a random end with end-comp energy closest to
-    desint.
-    """
+    """Return a random end with end-comp energy closest to desint."""
 
-    def endchooser(currentends, availends, energetics):
+    def endchooser(currentends: EndArray, availends: EndArray, energetics: Energetics):
         newend = availends[np.random.randint(0, len(availends))]
         return newend
 

@@ -1,6 +1,6 @@
 from __future__ import division
 import numpy as np
-from .endclasses import pairseqa, tops, endarray, Energetics
+from .endclasses import PairSeqA, tops, EndArray, Energetics
 from .version import __version__
 
 from . import newparams as p
@@ -123,7 +123,7 @@ class EnergeticsDAOE(Energetics):
                                                         + j * 4 + (3 - k)]
 
     def matching_uniform(self, seqs):
-        ps = pairseqa(seqs)
+        ps = PairSeqA(seqs)
 
         # In both cases here, the energy we want is the NN binding energy of
         # each stack,
@@ -150,7 +150,7 @@ class EnergeticsDAOE(Energetics):
     def uniform(self, seqs1, seqs2, debug=False):
         if seqs1.shape != seqs2.shape:
             if seqs1.ndim == 1:
-                seqs1 = endarray(
+                seqs1 = EndArray(
                     np.repeat(np.array([seqs1]), seqs2.shape[0], 0),
                     seqs1.endtype)
             else:

@@ -2,7 +2,7 @@ from __future__ import division
 
 import numpy as np
 
-from .endclasses import endarray, tops
+from .endclasses import EndArray, tops
 
 
 class EnergeticsBasicOld:
@@ -60,7 +60,7 @@ class EnergeticsBasicOld:
     def uniform_loopmismatch(self, seqs1, seqs2):
         if seqs1.shape != seqs2.shape:
             if seqs1.ndim == 1:
-                seqs1 = endarray(
+                seqs1 = EndArray(
                     np.repeat(np.array([seqs1]), seqs2.shape[0], 0),
                     seqs1.endtype)
             else:
@@ -105,7 +105,7 @@ class EnergeticsBasicOld:
     def uniform_danglemismatch(self, seqs1, seqs2, fast=True):
         if seqs1.shape != seqs2.shape:
             if seqs1.ndim == 1:
-                seqs1 = endarray(
+                seqs1 = EndArray(
                     np.repeat(np.array([seqs1]), seqs2.shape[0], 0),
                     seqs1.endtype)
             else:
