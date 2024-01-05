@@ -1,10 +1,8 @@
 import numpy as np
-try:
-    from typing import Self, TypeVar
-except ImportError:
-    from typing_extensions import Self, TypeVar  # noqa: UP035
-from typing import Union, Literal
+from typing_extensions import TypeAlias  # noqa: UP035
+from typing import Union, Literal, List, cast, Dict, Any  # noqa: UP035
 from collections.abc import Sequence
+from abc import ABC, abstractmethod, abstractproperty
 
 __all__ = [
     'Energetics',
@@ -19,10 +17,7 @@ __all__ = [
     'tops',
 ]
 
-EndTypes: TypeVar = Literal['DT', 'TD', 'S']
-
-class Energetics:
-    pass
+EndTypes: TypeAlias = Literal['DT', 'TD', 'S']  # noqa: UP040
 
 
 class PairSeqA(np.ndarray):
@@ -30,10 +25,10 @@ class PairSeqA(np.ndarray):
         obj = (4 * array[:, :-1] + array[:, 1:]).view(cls)
         return obj
 
-    def revcomp(self) -> Self:
-        return 4 * (3 - (self[:, ::-1] % 4)) + 3 - (self[:, ::-1] // 4)
+    def revcomp(self) -> 'PairSeqA':
+        return cast(PairSeqA, 4 * (3 - (self[:, ::-1] % 4)) + 3 - (self[:, ::-1] // 4))
 
-    def tolist(self) -> Self:
+    def tolist(self) -> List[str]:  # noqa: UP006
         st = ["a", "c", "g", "t"]
         return [
             "".join([st[x // 4] for x in y] + [st[y[-1] % 4]]) for y in self
@@ -51,7 +46,11 @@ class EndArray(np.ndarray):
     At present, it also handles adjacent+end style ends, but self.end and
     self.comp will return bogus information. It eventually needs to be split up
     into two classes in order to deal with this problem.
+
+    FIXME: above is outdated, support should be fine.
     """
+
+    endtype: EndTypes
 
     def __new__(cls, array: Union[Sequence[str], np.ndarray], endtype: EndTypes):
         if isinstance(array[0], str):
@@ -67,22 +66,36 @@ class EndArray(np.ndarray):
         self.endtype = getattr(obj, 'endtype', None)
 
     @property
-    def ends(self) -> Self:
+    def ends(self) -> 'EndArray':
         if self.endtype == 'DT':
-            return self[:, :-1]
+            x = cast(EndArray, self[:, :-1])
+            # x.endtype = 'DTe'
+            return x
         elif self.endtype == 'TD':
-            return self[:, 1:]
-        elif self.endtype == 'S':
-            return self[:, :]
+            x = cast(EndArray, self[:, 1:])
+            # x.endtype = 'TeD'
+            return x
+        elif self.endtype in ['S', 'DTe', 'TeD']:
+            return cast(EndArray, self[:, :])
+        else:
+            raise ValueError("Invalid endtype")
 
     @property
-    def comps(self) -> Self:
+    def comps(self) -> 'EndArray':
         if self.endtype == 'DT':
-            return (3 - self)[:, ::-1][:, :-1]
+            x = cast(EndArray, (3 - self)[:, ::-1][:, :-1])
+            # x.endtype = 'DTe'
+            return x
         elif self.endtype == 'TD':
-            return (3 - self)[:, ::-1][:, 1:]
+            x = cast(EndArray, (3 - self)[:, ::-1][:, 1:])
+            # x.endtype = 'TeD'
+            return x
         elif self.endtype == 'S':
-            return (3 - self)[:, ::-1][:, :]
+            return cast(EndArray, (3 - self)[:, ::-1][:, :])
+        elif self.endtype in ['DTe', 'TeD']:
+            raise ValueError("Cannot get comps of non-full TD or DT (TeD or DTe) type.")
+        else:
+            raise ValueError("Invalid endtype")
 
     @property
     def fcomps(self):
@@ -95,28 +108,41 @@ class EndArray(np.ndarray):
             np.concatenate((np.array(a1), np.array(a2)), axis=0),
             a1.endtype)
 
-    def _get_adjs(self):
+    @property
+    def adjs(self) -> 'EndArray':
         if self.endtype == 'DT':
-            return self[:, 0]
+            return cast(EndArray, self[:, 0])
         elif self.endtype == 'TD':
-            return self[:, -1]
+            return cast(EndArray, self[:, -1])
+        elif self.endtype in ['S', 'DTe', 'TeD']:
+            raise ValueError(f"End type {self.endtype} does not include adjacent bases.")
 
-    def _get_cadjs(self):
+    @property
+    def cadjs(self) -> 'EndArray':
         if self.endtype == 'DT':
-            return (3 - self)[:, -1]
+            return cast(EndArray, (3 - self)[:, -1])
         elif self.endtype == 'TD':
-            return (3 - self)[:, 0]
+            return cast(EndArray, (3 - self)[:, 0])
+        elif self.endtype in ['S', 'DTe', 'TeD']:
+            raise ValueError(f"End type {self.endtype} does not include adjacent bases.")
 
     def __len__(self):
         return self.shape[0]
 
-    def _get_endlen(self): # FIXME: not valid for S
-        return self.shape[1] - 1
+    @property
+    def endlen(self) -> int: # FIXME: not valid for S
+        if self.endtype in ['DT', 'TD']:
+            return self.shape[1] - 1
+        elif self.endtype in ['S', 'DTe', 'TeD']:
+            return self.shape[1]
+        else:
+            raise ValueError(f"Invalid endtype {self.endtype}")
 
-    def _get_seqlen(self):
+    @property
+    def seqlen(self) -> int:
         return self.shape[1]
 
-    def append(s1, s2):
+    def append(s1, s2: 'EndArray') -> 'EndArray':
         assert s1.endtype == s2.endtype
         n = np.vstack((s1, s2)).view(EndArray)
         n.endtype = s1.endtype
@@ -125,17 +151,28 @@ class EndArray(np.ndarray):
     def __repr__(self):
         return f"<endarray ({len(self)}): type {self.endtype}; {self.tolist()!r}>"
 
-    def tolist(self):
+    def tolist(self) -> List[str]:  # noqa: UP006
         st = ["a", "c", "g", "t"]
         return ["".join([st[x] for x in y]) for y in self]
 
-    endlen = property(_get_endlen)
-    seqlen = property(_get_seqlen)  # Added for new code compatibility
-    adjs = property(_get_adjs)
-    cadjs = property(_get_cadjs)
     strings = property(tolist)
 
 endarray = EndArray
+
+
+class Energetics(ABC):
+    @abstractproperty
+    def info(self) -> Dict[str, Any]:  # noqa: F821
+        ...
+
+    @abstractmethod
+    def matching_uniform(self, seqs: 'EndArray' | np.ndarray) -> np.ndarray:
+        ...
+
+    @abstractmethod
+    def uniform(self, seqs1: 'EndArray' | np.ndarray, seqs2: 'EndArray' | np.ndarray) -> np.ndarray:
+        ...
+
 
 nt = {'a': 0, 'c': 1, 'g': 2, 't': 3, 'A': 0, 'C': 1, 'G': 2, 'T': 3}
 

@@ -1,4 +1,5 @@
 from __future__ import division
+from typing import Any, Dict
 import numpy as np
 from .endclasses import PairSeqA, tops, EndArray, Energetics
 from .version import __version__
@@ -15,7 +16,7 @@ def py_tightloop(ens, ltmm, rtmm, intmm, singlepair, looppenalty):
     bindmax = np.zeros(ens.shape[0])
     for e in range(0, ens.shape[0]):
         acc = 0
-        for i in range(0, ens.shape[1]):
+        for i in range(ens.shape[1]):
             if ens[e, i] != 0:
                 # we're matching. add the pair to the accumulator
                 acc += ens[e, i]
@@ -97,7 +98,7 @@ class EnergeticsBasic(Energetics):
         self._accel = _accel
 
     @property
-    def info(self):
+    def info(self) -> Dict[str, Any]:  # noqa: F821
         info = {'enclass': 'EnergeticsDAOE',
                 'temperature': self.temperature,
                 'coaxparams': self.coaxparaminfo,
@@ -146,7 +147,7 @@ class EnergeticsBasic(Energetics):
             self.coaxparaminfo = self.coaxparams
             self.coaxparams = False
         else:
-            raise ValueError("Invalid coaxparams: {}".format(self.coaxparams),
+            raise ValueError(f"Invalid coaxparams: {self.coaxparams}",
                              self.coaxparams)
         self.dangle5dG = p.dangle5dG37 - (temperature - 37) * p.dangle5dS
         self.dangle3dG = p.dangle3dG37 - (temperature - 37) * p.dangle3dS

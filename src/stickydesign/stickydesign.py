@@ -1,16 +1,19 @@
 import numpy as np
 import itertools
 import logging
-from typing import Literal, Optional, TypeVar
+from typing import Optional, List, TypeAlias, cast
 from collections.abc import Callable
 from collections.abc import Sequence
 
 from .endclasses import EndArray, lton, wc, Energetics, EndTypes
 from .energetics_basic import EnergeticsBasic
+from .energetics_daoe import EnergeticsDAOE
 
 LOGGER = logging.getLogger(__name__)
 
-EndChooserType: TypeVar = Callable[[EndArray, EndArray, Energetics], np.ndarray]
+EndChooserType: TypeAlias = Callable[[EndArray, EndArray, Energetics], np.ndarray]
+SpaceFilterType: TypeAlias = Callable[[EndArray, Energetics], EndArray]
+EndFilterType: TypeAlias = Callable[[EndArray, EndArray, EndArray, Energetics], EndArray]
 
 __all__ = [
     'values_chunked', 'get_accept_set', 'find_end_set_uniform',
@@ -81,7 +84,7 @@ def get_accept_set(endtype: EndTypes,
     elif endtype == 'S':
         template = [lton[alphabet.lower()]]*length
 
-    LOGGER.info("Length {0}, type {1}, adjacents {2}, alphabet {3}.".format(
+    LOGGER.info("Length {}, type {}, adjacents {}, alphabet {}.".format(
         length, endtype, adjacents, alphabet))
     LOGGER.debug("Have template %s, endtype %s.", template, endtype)
 
@@ -92,15 +95,15 @@ def get_accept_set(endtype: EndTypes,
     matcharrays = []
     chunknum = 0
     totchunks = None
-    totends = np.product([len(x) for x in template])
+    totends = np.prod([len(x) for x in template])
     LOGGER.debug(
-        "Have {0} ends in total before any filtering.".format(totends))
+        "Have {} ends in total before any filtering.".format(totends))
     for chunk in endchunk:
         matcharrays.append(spacefilter(chunk, energetics))
         if not totchunks:
             totchunks = totends // len(chunk)
         chunknum += 1
-        LOGGER.debug("Found {0} filtered ends in chunk {1} of {2}.".format(
+        LOGGER.debug("Found {} filtered ends in chunk {} of {}.".format(
             len(matcharrays[-1]), chunknum, totchunks))
     LOGGER.debug("Done with spacefiltering.")
     availends = np.vstack(matcharrays).view(EndArray)
@@ -114,7 +117,7 @@ def _make_avail(endtype: EndTypes,
                 endfilter,
                 endchooser,
                 energetics,
-                adjacents=['n', 'n'],
+                adjacents=('n', 'n'),
                 num=0,
                 numtries=1,
                 oldendfilter=None,
@@ -130,7 +133,7 @@ def _make_avail(endtype: EndTypes,
     elif endtype == 'S':
         template = [lton[alphabet.lower()]]*length
     
-    LOGGER.info("Length {0}, type {1}, adjacents {2}, alphabet {3}.".format(
+    LOGGER.info("Length {}, type {}, adjacents {}, alphabet {}.".format(
         length, endtype, adjacents, alphabet))
     LOGGER.debug("Have template %s, endtype %s", template, endtype)
 
@@ -141,15 +144,15 @@ def _make_avail(endtype: EndTypes,
     matcharrays = []
     chunknum = 0
     totchunks = None
-    totends = np.product([len(x) for x in template])
+    totends = np.prod([len(x) for x in template])
     LOGGER.debug(
-        "Have {0} ends in total before any filtering.".format(totends))
+        "Have {} ends in total before any filtering.".format(totends))
     for chunk in endchunk:
         matcharrays.append(spacefilter(chunk, energetics))
         if not totchunks:
             totchunks = totends // len(chunk)
         chunknum += 1
-        LOGGER.debug("Found {0} filtered ends in chunk {1} of {2}.".format(
+        LOGGER.debug("Found {} filtered ends in chunk {} of {}.".format(
             len(matcharrays[-1]), chunknum, totchunks))
     LOGGER.debug("Done with spacefiltering.")
     availends = np.vstack(matcharrays).view(EndArray)
@@ -166,19 +169,19 @@ def _make_avail(endtype: EndTypes,
     return availends
 
 
-def find_end_set_uniform(endtype,
-                         length,
-                         spacefilter,
-                         endfilter,
-                         endchooser,
-                         energetics,
-                         adjacents=['n', 'n'],
-                         num=0,
-                         numtries=1,
+def find_end_set_uniform(endtype: EndTypes,  # noqa: PLR0913, PLR0912
+                         length: int,
+                         spacefilter: SpaceFilterType,
+                         endfilter: EndFilterType,
+                         endchooser: EndChooserType,
+                         energetics: Energetics,
+                         adjacents: Sequence[str] = ('n', 'n'),
+                         num: int = 0,
+                         numtries: int = 1,
                          oldendfilter=None,
-                         oldends=[],
+                         oldends: Sequence[str] | EndArray = (),
                          alphabet='n',
-                         _presetavail=False):
+                         _presetavail=False) -> EndArray | List[EndArray]:  # noqa: UP006
     """
     Find a set of ends of uniform length and type satisfying uniform
     constraint functions (eg, constrant functions are the same for each
@@ -189,7 +192,6 @@ def find_end_set_uniform(endtype,
 
     Parameters
     ----------
-
     endtype : str
       right now 'DT' for 3'-terminal ends, and 'TD' for
       5'-terminal ends,
@@ -235,11 +237,9 @@ def find_end_set_uniform(endtype,
 
     Returns
     -------
-
     endarray
       an endarray of generated ends, including provided old ends
-    """
-
+    """  # noqa: D205
     if (len(oldends) > 0) and isinstance(oldends[0], str):
         oldends = EndArray(oldends, endtype)
     
@@ -269,7 +269,7 @@ def find_end_set_uniform(endtype,
             newend = EndArray(
                 np.array([endchooser(curends, availends, energetics)]),
                 endtype)
-            LOGGER.debug("Chose end {0}.".format(repr(newend)))
+            LOGGER.debug(f"Chose end {newend!r}.")
             newend.endtype = endtype
             availends = endfilter(newend, curends, availends, energetics)
             LOGGER.debug("Done filtering.")
@@ -278,9 +278,9 @@ def find_end_set_uniform(endtype,
             else:
                 curends = curends.append(newend)
             numends += 1
-            LOGGER.debug("Now have {0} ends in set, and {1} ends available.".format(numends, len(availends)))
+            LOGGER.debug(f"Now have {numends} ends in set, and {len(availends)} ends available.")
             if len(availends) == 0:
-                LOGGER.info("Found {0} ends.".format(numends))
+                LOGGER.info("Found %d ends.", numends)
                 break
             if numends >= num and num > 0:
                 break
@@ -331,9 +331,9 @@ def find_end_set_uniform(endtype,
             return endsets[0]
 
 
-def enhist(endtype,
-           length,
-           adjacents=['n', 'n'],
+def enhist(endtype: EndTypes,
+           length: int,
+           adjacents=('n', 'n'),
            alphabet='n',
            bins=None,
            energetics=None,
@@ -359,13 +359,13 @@ def enhist(endtype,
     if not bins:
         bins = np.arange(minbin, maxbin, 0.1)
 
-    LOGGER.debug("Have template {0} and type {1}.".format(template, endtype))
+    LOGGER.debug(f"Have template {template} and type {endtype}.")
 
     # Create the chunk iterator
     endchunk = values_chunked(template, endtype)
 
     hist = np.zeros(len(bins) - 1, dtype='int')
-    totends = np.product([len(x) for x in template])
+    totends = np.prod([len(x) for x in template])
     finishedends = 0
     info = {'min': np.inf, 'max': -np.inf, 'mean': 0}
     for chunk in endchunk:
@@ -377,7 +377,7 @@ def enhist(endtype,
                         + np.mean(matchens) * len(chunk) /
                         (len(chunk)+finishedends))
         finishedends += len(matchens)
-        LOGGER.debug("Done with {0}/{1} ends.".format(finishedends, totends))
+        LOGGER.debug(f"Done with {finishedends}/{totends} ends.")
 
     x = (bins[:-1] + bins[1:]) / 2
     n = hist
@@ -395,12 +395,11 @@ def enhist(endtype,
             bins[:-1],
             hist,
             width=(bins[1] - bins[0]),
-            label="Type {3}, Length {0}, Adjs {1}, Alph {2}".format(
-                length, adjacents, alphabet, endtype),
+            label=f"Type {endtype}, Length {length}, Adjs {adjacents}, Alph {alphabet}",
             color=color)
         plt.title(
-            "Matching Energies of Ends of Type {3}, Length {0}, Adjs {1}, Alph {2}".
-            format(length, adjacents, alphabet, endtype))
+            "Matching Energies of Ends of Type {}, Length {}, Adjs {}, Alph {}".
+            format(endtype, length, adjacents, alphabet))
         plt.xlabel("Standard Free Energy (-kcal/mol)")
         plt.ylabel("Number of Ends")
         # plt.show()
@@ -408,21 +407,21 @@ def enhist(endtype,
     return (hist, bins, info)
 
 
-def easyends(endtype: EndTypes,
+def easyends(endtype: EndTypes,  # noqa: PLR0913
              endlength: int,
              number: int = 0,
-             interaction: Optional[int] =None,
+             interaction: Optional[float] =None,
              fdev: float=0.05,
              maxspurious: float=0.5,
              maxendspurious: Optional[float]=None,
              tries: int=1,
-             oldends: Sequence[str]=[],
-             adjs: Sequence[str]=['n', 'n'],
+             oldends: Sequence[str]=(),
+             adjs: Sequence[str]=('n', 'n'),
              energetics=None,
              alphabet: str='n',
              echoose: Optional[EndChooserType] = None,
              absolute: bool = False,
-             _presetavail=False):
+             _presetavail=False) -> EndArray:
     """
     Easyends is an attempt at creating an easy-to-use function for finding sets of ends.
 
@@ -464,12 +463,17 @@ def easyends(endtype: EndTypes,
     * alphabet (default 'n'): The alphabet to use for ends, allowing
       for three-letter codes.
     """
-    efunc = energetics if energetics is not None else EnergeticsBasic()
+    if energetics is None:
+        if endtype in ['DT', 'TD']:  # noqa: SIM108
+            energetics = EnergeticsDAOE()
+        else:
+            energetics = EnergeticsBasic()
+
     if (not interaction) or (interaction == 0):
         interaction = enhist(
             endtype,
             endlength,
-            energetics=efunc,
+            energetics=energetics,
             adjacents=adjs,
             alphabet=alphabet)[2]['emedian']
         LOGGER.info("Calculated optimal interaction energy is %s.", interaction)
@@ -490,7 +494,7 @@ def easyends(endtype: EndTypes,
         sfilt,
         efilt,
         echoose,
-        energetics=efunc,
+        energetics=energetics,
         numtries=tries,
         oldends=oldends,
         adjacents=adjs,
@@ -499,18 +503,18 @@ def easyends(endtype: EndTypes,
         _presetavail=_presetavail)
 
 
-def easy_space(endtype,
-               endlength,
-               interaction=None,
-               fdev=0.05,
-               maxspurious=0.5,
-               maxendspurious=None,
-               tries=1,
-               oldends=[],
-               adjs=['n', 'n'],
-               energetics=None,
-               alphabet='n',
-               echoose=None):
+def easy_space(endtype: EndTypes,
+               endlength: int,
+               interaction: Optional[float] = None,
+               fdev:float = 0.05,
+               maxspurious: float = 0.5,
+               maxendspurious: Optional[float] = None,
+               tries: int = 1,
+               oldends: Sequence[str] = (),
+               adjs: Sequence[str] = ('n', 'n'),
+               energetics: Optional[Energetics] = None,
+               alphabet: str = 'n',
+               echoose: Optional[EndChooserType] = None):
     length = endlength
     if not energetics:
         efunc = EnergeticsBasic()
@@ -518,14 +522,14 @@ def easy_space(endtype,
     else:
         efunc = energetics
     if (not interaction) or (interaction == 0):
-        interaction = enhist(
+        interaction = cast(float, enhist(
             endtype,
             endlength,
             energetics=efunc,
             adjacents=adjs,
-            alphabet=alphabet)[2]['emedian']
-        LOGGER.info("Calculated optimal interaction energy is {0}.".format(
-            interaction))
+            alphabet=alphabet)[2]['emedian'])
+        LOGGER.info("Calculated optimal interaction energy is %g.",
+            interaction)
     maxcompspurious = maxspurious * interaction
     if not maxendspurious:
         maxendspurious = maxspurious * interaction
@@ -555,9 +559,9 @@ def easy_space(endtype,
     matcharrays = []
     chunknum = 0
     totchunks = None
-    totends = np.product([len(x) for x in template])
+    totends = np.prod([len(x) for x in template])
     LOGGER.info(
-        "Have {0} ends in total before any filtering.".format(totends))
+        "Have {} ends in total before any filtering.".format(totends))
     for chunk in endchunk:
         matcharrays.append(spacefilter(chunk, energetics))
         if not totchunks:
@@ -569,8 +573,8 @@ def easy_space(endtype,
     availends = np.vstack(matcharrays).view(EndArray)
     availends.endtype = endtype
 
-    availendsr = np.repeat(availends, len(availends), axis=0)
-    availendst = np.tile(availends, (len(availends), 1))
+    availendsr = cast(EndArray, np.repeat(availends, len(availends), axis=0))
+    availendst = cast(EndArray, np.tile(availends, (len(availends), 1)))
 
     vals_ee = energetics.uniform(availendsr.ends, availendst.ends)
     vals_ec = energetics.uniform(availendsr.ends, availendst.comps)
@@ -579,23 +583,22 @@ def easy_space(endtype,
 
     vals_tf = ((vals_ee < maxendspurious) & (vals_cc < maxendspurious) &
                (vals_ec < maxcompspurious) & (vals_ce < maxcompspurious))
-    zipendsnf = zip(availendsr.tolist(), availendst.tolist())
+    zipendsnf = list(zip(availendsr.tolist(), availendst.tolist(), strict=True))
     zipends = [zipendsnf[x] for x in np.flatnonzero(vals_tf)]
 
     return zipends
 
-
-def spacefilter_standard(desint, dev, maxself):
+def spacefilter_standard(desint: float, dev: float, maxself: float) -> SpaceFilterType:
     """
     A spacefilter function: filters to ends that have a end-complement
     interaction of between desint-dev and desint+dev, and a self-interaction
     (end-end or comp-comp) of less than maxself.
     """
 
-    def spacefilter(fullends, energetics):
+    def spacefilter(fullends: EndArray, energetics: Energetics) -> EndArray:
         matchenergies = energetics.matching_uniform(fullends)
         g4 = np.zeros(fullends.shape[0])
-        for w in range(0, (fullends.shape[1] - 3)):
+        for w in range(fullends.shape[1] - 3):
             g4 += (np.sum(
                 np.array(fullends[:, w:(w + 4)] == [2, 2, 2, 2]), axis=1) == 4)
             g4 += (np.sum(
@@ -603,23 +606,23 @@ def spacefilter_standard(desint, dev, maxself):
         i = np.flatnonzero((matchenergies < desint + dev) &
                            (matchenergies > desint - dev) & (g4 == 0))
         matchenergies = matchenergies[i]
-        fullends = fullends[i]
+        fullends = cast(EndArray, fullends[i])
         selfselfenergies = energetics.uniform(fullends.ends, fullends.ends)
         compcompenergies = energetics.uniform(fullends.comps, fullends.comps)
         i = np.flatnonzero((selfselfenergies < maxself) & (compcompenergies <
                                                            maxself))
-        return fullends[i]
+        return cast(EndArray, fullends[i])
 
     return spacefilter
 
 
-def endfilter_standard(maxspurious):
+def endfilter_standard(maxspurious: float) -> EndFilterType:
     """
     An endfilter function: filters out ends that have any (end-end, end-comp,
     comp-end, comp-comp) interactions with new ends above maxspurious.
     """
 
-    def endfilter(newends, currentends, availends, energetics):
+    def endfilter(newends: EndArray, currentends: EndArray, availends: EndArray, energetics: Energetics):
         endendspurious = energetics.uniform(
             np.repeat(newends.ends, len(availends), 0),
             np.tile(availends.ends, (len(newends), 1))).reshape(
@@ -645,14 +648,14 @@ def endfilter_standard(maxspurious):
     return endfilter
 
 
-def endfilter_standard_advanced(maxcompspurious, maxendspurious):
+def endfilter_standard_advanced(maxcompspurious: float, maxendspurious: float) -> EndFilterType:
     """
     An endfilter function: filters out ends that have end-comp or comp-end
     interactions above maxcompspurious, and end-end or comp-comp interactions
     above maxendspurious.
     """
 
-    def endfilter(newends, currentends, availends, energetics):
+    def endfilter(newends: EndArray, currentends: EndArray, availends: EndArray, energetics: Energetics):
         endendspurious = energetics.uniform(
             np.repeat(newends.ends, len(availends), 0),
             np.tile(availends.ends, (len(newends), 1))).reshape(
@@ -680,7 +683,7 @@ def endfilter_standard_advanced(maxcompspurious, maxendspurious):
     return endfilter
 
 
-def energy_array_uniform(seqs: EndArray, energetics):
+def energy_array_uniform(seqs: EndArray, energetics: Energetics) -> np.ndarray:
     """Given an endarray and a set of sequences, return an array of the interactions between them, including their complements."""
     seqs = seqs.ends.append(seqs.comps)
     return energetics.uniform(
@@ -688,7 +691,7 @@ def energy_array_uniform(seqs: EndArray, energetics):
             seqs, (seqs.shape[0], 1))).reshape((seqs.shape[0], seqs.shape[0]))
 
 
-def endchooser_standard(desint, wiggle=0.0):
+def endchooser_standard(desint: float, wiggle: float = 0.0) -> EndChooserType:
     """Return a random end with end-comp energy closest to desint, subject to some wiggle."""
 
     def endchooser(currentends: EndArray, availends: EndArray, energetics: Energetics):
@@ -700,7 +703,7 @@ def endchooser_standard(desint, wiggle=0.0):
     return endchooser
 
 
-def endchooser_random():
+def endchooser_random() -> EndChooserType:
     """Return a random end with end-comp energy closest to desint."""
 
     def endchooser(currentends: EndArray, availends: EndArray, energetics: Energetics):

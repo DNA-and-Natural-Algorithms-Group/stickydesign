@@ -70,23 +70,25 @@ class EnergeticsBasicOld:
         endtype = seqs1.endtype
 
         endlen = seqs1.endlen
-        plen = endlen - 1
+        plen = endlen if endtype in ['DTe', 'TeD'] else endlen - 1
 
         # TODO: replace this with cleaner code
-        if endtype == 'DT':
+        if endtype in ['DTe', 'DT']:
             ps1 = seqs1[:, 1:-1] * 4 + seqs1[:, 2:]
             pa1 = seqs1[:, 0] * 4 + seqs1[:, 1]
             pac1 = (3 - seqs1[:, 0]) * 4 + seqs2[:, -1]
             ps2 = seqs2[:, ::-1][:, :-2] * 4 + seqs2[:, ::-1][:, 1:-1]
             pa2 = seqs2[:, 0] * 4 + seqs2[:, 1]
             pac2 = (3 - seqs2[:, 0]) * 4 + seqs1[:, -1]
-        if endtype == 'TD':
+        elif endtype in ['TeD', 'TD']:
             ps1 = seqs1[:, :-2] * 4 + seqs1[:, 1:-1]
             pa1 = seqs1[:, -2] * 4 + seqs1[:, -1]
             pac1 = seqs2[:, 0] * 4 + (3 - seqs1[:, -1])
             ps2 = seqs2[:, ::-1][:, 1:-1] * 4 + seqs2[:, ::-1][:, 2:]
             pa2 = seqs2[:, -2] * 4 + seqs2[:, -1]
             pac2 = (seqs1[:, 0]) * 4 + (3 - seqs2[:, -1])
+        else:
+            raise ValueError(f"Invalid endtype {endtype} for uniform_loopmismatch")
 
         # Shift here is considering the first strand as fixed, and the second
         # one as shifting.  The shift is the offset of the bottom one in terms
@@ -121,20 +123,22 @@ class EnergeticsBasicOld:
         m = np.zeros((s1.shape[0], 2 * np.sum(np.arange(2, l + 1)) + l + 1))
         r = np.zeros(m.shape[0])
         z = 0
-        if endtype == 'TD':
+        if endtype in ['TeD', 'TD']:
             s1c = s1[:, 0:-1]
             s2rc = s2r[:, 1:]
             s1l = np.hstack(((4 * (s2r[:, 0] // 4) + s1[:, 0] // 4).reshape(
                 -1, 1), s1))
             s2rl = np.hstack(
                 (s2r, (4 * (s2r[:, -1] % 4) + s1[:, -1] % 4).reshape(-1, 1)))
-        elif endtype == 'DT':
+        elif endtype in ['DTe', 'DT']:
             s1c = s1[:, 1:]
             s2rc = s2r[:, 0:-1]
             s2rl = np.hstack(((4 * (s1[:, 0] // 4) + s2r[:, 0] // 4).reshape(
                 -1, 1), s2r))
             s1l = np.hstack(
                 (s1, (4 * (s1[:, -1] % 4) + s2r[:, -1] % 4).reshape(-1, 1)))
+        else:
+            raise ValueError(f"Invalid endtype {endtype} for uniform_danglemismatch")
         for o in range(1, l - 1):
             zn = l - 1 - o
             m[:, z:z + zn] = (
