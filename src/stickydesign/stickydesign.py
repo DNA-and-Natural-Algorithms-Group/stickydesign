@@ -1,7 +1,8 @@
 import numpy as np
 import itertools
 import logging
-from typing import Optional, List, TypeAlias, cast
+from typing import Optional, List, cast
+from typing_extensions import TypeAlias
 from collections.abc import Callable
 from collections.abc import Sequence
 
