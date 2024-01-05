@@ -166,11 +166,11 @@ class Energetics(ABC):
         ...
 
     @abstractmethod
-    def matching_uniform(self, seqs: 'EndArray' | np.ndarray) -> np.ndarray:
+    def matching_uniform(self, seqs: Union[EndArray, np.ndarray]) -> np.ndarray:
         ...
 
     @abstractmethod
-    def uniform(self, seqs1: 'EndArray' | np.ndarray, seqs2: 'EndArray' | np.ndarray) -> np.ndarray:
+    def uniform(self, seqs1: Union[EndArray, np.ndarray], seqs2: Union[EndArray, np.ndarray]) -> np.ndarray:
         ...
 
 
