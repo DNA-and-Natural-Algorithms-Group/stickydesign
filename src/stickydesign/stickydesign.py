@@ -1,7 +1,7 @@
 import numpy as np
 import itertools
 import logging
-from typing import Optional, List, cast
+from typing import Optional, List, Union, cast
 from typing_extensions import TypeAlias
 from collections.abc import Callable
 from collections.abc import Sequence
@@ -180,9 +180,9 @@ def find_end_set_uniform(endtype: EndTypes,  # noqa: PLR0913, PLR0912
                          num: int = 0,
                          numtries: int = 1,
                          oldendfilter=None,
-                         oldends: Sequence[str] | EndArray = (),
+                         oldends: Union[Sequence[str], EndArray] = (),
                          alphabet='n',
-                         _presetavail=False) -> EndArray | List[EndArray]:  # noqa: UP006
+                         _presetavail=False) -> Union[EndArray, List[EndArray]]:  # noqa: UP006
     """
     Find a set of ends of uniform length and type satisfying uniform
     constraint functions (eg, constrant functions are the same for each
