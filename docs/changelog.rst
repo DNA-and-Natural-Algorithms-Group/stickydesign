@@ -1,6 +1,11 @@
 Changelog
 ==========
 
+0.9.1
+-----
+
+* Update stickydesign-accel rust dependencies, pyo3 organization.
+
 0.9.0a1
 -------
 
