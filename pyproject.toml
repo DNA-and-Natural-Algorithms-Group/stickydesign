@@ -26,7 +26,7 @@ version = "0.9.1"
 authors = [{ name = "Constantine Evans", email = "const@costi.net" }]
 description = "StickyDesign DNA Tile Sticky End Package"
 readme = "README.md"
-dependencies = ["numpy ~= 1.20"]
+dependencies = ["numpy ~= 1.20", "typing_extensions~=4.0"]
 
 [project.urls]
 homepage = "https://dna.caltech.edu/StickyDesign"
@@ -41,7 +41,7 @@ where = ["src"]
 
 
 [project.optional-dependencies]
-accel = ["stickydesign-accel == 0.9.0.a2"]
+accel = ["stickydesign-accel == 0.9.1"]
 tests = ["pytest-cov", "pytest-benchmark", "pytest", "hypothesis"]
 
 
