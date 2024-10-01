@@ -170,7 +170,7 @@ def _make_avail(endtype: EndTypes,
     return availends
 
 
-def find_end_set_uniform(endtype: EndTypes,  # noqa: PLR0913, PLR0912
+def find_end_set_uniform(endtype: EndTypes, 
                          length: int,
                          spacefilter: SpaceFilterType,
                          endfilter: EndFilterType,
@@ -182,7 +182,7 @@ def find_end_set_uniform(endtype: EndTypes,  # noqa: PLR0913, PLR0912
                          oldendfilter=None,
                          oldends: Union[Sequence[str], EndArray] = (),
                          alphabet='n',
-                         _presetavail=False) -> Union[EndArray, List[EndArray]]:  # noqa: UP006
+                         _presetavail=False) -> Union[EndArray, List[EndArray]]:  
     """
     Find a set of ends of uniform length and type satisfying uniform
     constraint functions (eg, constrant functions are the same for each
@@ -240,7 +240,7 @@ def find_end_set_uniform(endtype: EndTypes,  # noqa: PLR0913, PLR0912
     -------
     endarray
       an endarray of generated ends, including provided old ends
-    """  # noqa: D205
+    """ 
     if (len(oldends) > 0) and isinstance(oldends[0], str):
         oldends = EndArray(oldends, endtype)
     
@@ -325,11 +325,10 @@ def find_end_set_uniform(endtype: EndTypes,  # noqa: PLR0913, PLR0912
 
     if len(endsets) > 1:
         return endsets
+    elif _presetavail is None or isinstance(_presetavail,EndArray):
+        return endsets[0], startavail
     else:
-        if _presetavail is None or isinstance(_presetavail,EndArray):
-            return endsets[0], startavail
-        else:
-            return endsets[0]
+        return endsets[0]
 
 
 def enhist(endtype: EndTypes,
@@ -408,7 +407,7 @@ def enhist(endtype: EndTypes,
     return (hist, bins, info)
 
 
-def easyends(endtype: EndTypes,  # noqa: PLR0913
+def easyends(endtype: EndTypes,
              endlength: int,
              number: int = 0,
              interaction: Optional[float] =None,

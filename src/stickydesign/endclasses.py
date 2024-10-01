@@ -116,6 +116,8 @@ class EndArray(np.ndarray):
             return cast(EndArray, self[:, -1])
         elif self.endtype in ['S', 'DTe', 'TeD']:
             raise ValueError(f"End type {self.endtype} does not include adjacent bases.")
+        else:
+            raise ValueError(f"Invalid endtype {self.endtype}")
 
     @property
     def cadjs(self) -> 'EndArray':
@@ -125,6 +127,8 @@ class EndArray(np.ndarray):
             return cast(EndArray, (3 - self)[:, 0])
         elif self.endtype in ['S', 'DTe', 'TeD']:
             raise ValueError(f"End type {self.endtype} does not include adjacent bases.")
+        else:
+            raise ValueError(f"Invalid endtype {self.endtype}")
 
     def __len__(self):
         return self.shape[0]
