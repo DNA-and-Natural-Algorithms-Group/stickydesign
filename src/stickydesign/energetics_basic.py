@@ -80,7 +80,8 @@ class EnergeticsBasic(Energetics):
                  version=None,
                  enclass=None,
                  _tightloop=None,
-                 _accel=None):
+                 _accel=None,
+                 _allow_shifts=True):
         self.coaxparams = coaxparams
         self.singlepair = singlepair
         self.danglecorr = danglecorr
@@ -90,13 +91,12 @@ class EnergeticsBasic(Energetics):
             self._accel = ACCEL
         if _tightloop is None:
             _tightloop = ACCEL
-        if _accel or _tightloop:
-            if not ACCEL:
+        if (_accel or _tightloop) and not ACCEL:
                 raise ImportError("Accelerated functions not available: install stickydesign-accel.")
 
         self._tightloop = rust_tightloop if _tightloop else py_tightloop
         self._accel = _accel
-
+        self._allow_shifts = _allow_shifts
     @property
     def info(self) -> Dict[str, Any]:  # noqa: F821
         info = {'enclass': 'EnergeticsDAOE',
@@ -200,7 +200,7 @@ class EnergeticsBasic(Energetics):
         if not self._accel:
              return self._uniform(seqs1, seqs2, debug=debug)
         else:
-            return fastuniform(seqs1, seqs2, -self.nndG, -self.ltmmdG_5335, -self.rtmmdG_5335, -self.intmmdG_5335, p.looppenalty, self.singlepair, self.initdG)
+            return fastuniform(seqs1, seqs2, -self.nndG, -self.ltmmdG_5335, -self.rtmmdG_5335, -self.intmmdG_5335, p.looppenalty, self.singlepair, self.initdG, self._allow_shifts)
 
     def _uniform(self, seqs1, seqs2, debug=False):
         s1 = tops(seqs1)
@@ -217,7 +217,7 @@ class EnergeticsBasic(Energetics):
         s1_end = s1[:, :]
         s2_end_rc = s2r[:, :]
         
-        for offset in range(-l + 1, l):
+        for offset in range(-l + 1, l) if self._allow_shifts else [0]:
             if offset > 0:
                     # Energies of matching stacks, zero otherwise. Can be used
                     # to check match.

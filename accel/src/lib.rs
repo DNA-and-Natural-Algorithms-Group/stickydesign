@@ -74,6 +74,7 @@ mod stickydesign_accel {
         looppenalty: f64,
         singlepair: bool,
         initdG: f64,
+        allow_shifts: bool,
         py: Python<'py>,
     ) -> Bound<'py, PyArray1<f64>> {
         let seqs1 = seqs1.as_array();
@@ -91,11 +92,17 @@ mod stickydesign_accel {
 
         let ln = s1.ncols();
 
+        let offset_range = if allow_shifts {
+            (1 - ln as i32)..(ln as i32)
+        } else {
+            0..1
+        };
+
         ens.indexed_iter_mut()
             .zip(s1.axis_iter(Axis(0)))
             .zip(s2r.axis_iter(Axis(0)))
             .for_each(|(((_r, e), s1), s2)| {
-                for offset in (1 - ln as i32)..(ln as i32) {
+                for offset in offset_range.clone() {
                     let s1s = if offset == 0 {
                         s1.slice(s![..])
                     } else if offset < 0 {
