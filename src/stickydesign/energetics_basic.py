@@ -179,6 +179,7 @@ class EnergeticsBasic(Energetics):
                                                         + j * 4 + (3 - k)]
 
     def matching_uniform(self, seqs):
+        seqs = EndArray(seqs)
         assert seqs.endtype == 'S'
         ps = PairSeqA(seqs)
 
@@ -187,6 +188,8 @@ class EnergeticsBasic(Energetics):
         return -(np.sum(self.nndG[ps], axis=1) + self.initdG)
 
     def uniform(self, seqs1, seqs2, debug=False):
+        seqs1 = EndArray(seqs1)
+        seqs2 = EndArray(seqs2)
         assert seqs1.endtype == seqs2.endtype
         assert seqs1.endtype == 'S'
         if seqs1.shape != seqs2.shape:

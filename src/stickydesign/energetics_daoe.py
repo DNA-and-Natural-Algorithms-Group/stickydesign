@@ -123,6 +123,7 @@ class EnergeticsDAOE(Energetics):
                                                         + j * 4 + (3 - k)]
 
     def matching_uniform(self, seqs):
+        seqs = EndArray(seqs)
         ps = PairSeqA(seqs)
 
         # In both cases here, the energy we want is the NN binding energy of
@@ -148,6 +149,8 @@ class EnergeticsDAOE(Energetics):
         return -(np.sum(self.nndG[ps], axis=1) + self.initdG + dcorr)
 
     def uniform(self, seqs1, seqs2, debug=False):
+        seqs1 = EndArray(seqs1)
+        seqs2 = EndArray(seqs2)
         if seqs1.shape != seqs2.shape:
             if seqs1.ndim == 1:
                 seqs1 = EndArray(

@@ -55,9 +55,12 @@ class EnergeticsBasicOld:
                 "Mismatchtype {0} is not supported.".format(mismatchtype))
 
     def matching_uniform(self, seqs):
+        seqs = EndArray(seqs)
         return np.sum(self.nndG[tops(seqs)], axis=1) - self.initdG
 
     def uniform_loopmismatch(self, seqs1, seqs2):
+        seqs1 = EndArray(seqs1)
+        seqs2 = EndArray(seqs2)
         if seqs1.shape != seqs2.shape:
             if seqs1.ndim == 1:
                 seqs1 = EndArray(
@@ -105,6 +108,8 @@ class EnergeticsBasicOld:
         return np.amax(en, 1) - self.initdG
 
     def uniform_danglemismatch(self, seqs1, seqs2, fast=True):
+        seqs1 = EndArray(seqs1)
+        seqs2 = EndArray(seqs2)
         if seqs1.shape != seqs2.shape:
             if seqs1.ndim == 1:
                 seqs1 = EndArray(

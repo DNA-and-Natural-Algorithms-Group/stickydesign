@@ -52,7 +52,11 @@ class EndArray(np.ndarray):
 
     endtype: EndTypes
 
-    def __new__(cls, array: Union[Sequence[str], np.ndarray], endtype: EndTypes):
+    def __new__(cls, array: "Union[Sequence[str], np.ndarray, str, EndArray]", endtype: EndTypes = "S"):
+        if isinstance(array, EndArray):
+            return array
+        if isinstance(array, str):
+            array = [array]
         if isinstance(array[0], str):
             array = np.array(
                 [[nt[x] for x in y] for y in array], dtype=np.uint8)
@@ -165,16 +169,17 @@ endarray = EndArray
 
 
 class Energetics(ABC):
-    @abstractproperty
-    def info(self) -> Dict[str, Any]:  # noqa: F821
+    @property
+    @abstractmethod
+    def info(self) -> Dict[str, Any]:
         ...
 
     @abstractmethod
-    def matching_uniform(self, seqs: Union[EndArray, np.ndarray]) -> np.ndarray:
+    def matching_uniform(self, seqs: Union[EndArray, np.ndarray, str]) -> np.ndarray:
         ...
 
     @abstractmethod
-    def uniform(self, seqs1: Union[EndArray, np.ndarray], seqs2: Union[EndArray, np.ndarray]) -> np.ndarray:
+    def uniform(self, seqs1: Union[EndArray, np.ndarray, str], seqs2: Union[EndArray, np.ndarray, str]) -> np.ndarray:
         ...
 
 
