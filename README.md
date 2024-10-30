@@ -1,7 +1,7 @@
 [![Documentation Status](https://readthedocs.org/projects/qslib/badge/?version=latest)](https://stickydesign.readthedocs.io/en/latest/?badge=latest)
-![Codecov](https://img.shields.io/codecov/c/github/DNA-and-Natural-Algorithms-Group/stickydesign)
+[![Codecov](https://img.shields.io/codecov/c/github/DNA-and-Natural-Algorithms-Group/stickydesign)](https://codecov.io/gh/DNA-and-Natural-Algorithms-Group/stickydesign)
 ![GitHub Workflow
-Status](https://img.shields.io/github/workflow/status/DNA-and-Natural-Algorithms-Group/stickydesign/Tests)
+Status](https://img.shields.io/github/actions/workflow/status/DNA-and-Natural-Algorithms-Group/stickydesign/python-tests.yml?branch=main)
 ![PyPI](https://img.shields.io/pypi/v/stickydesign)
 
 The StickyDesign Sticky End Sequence Designer
