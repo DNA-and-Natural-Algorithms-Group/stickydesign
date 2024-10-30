@@ -103,9 +103,9 @@ class EnergeticsDAOE(object):
         self.intmmdG_5335 = np.zeros(256)
 
         # Dumb setup. FIXME: do this cleverly
-        for i in range(0, 4):
-            for j in range(0, 4):
-                for k in range(0, 4):
+        for i in range(4):
+            for j in range(4):
+                for k in range(4):
                     self.ltmmdG_5335[
                         i * 64 + j * 16 + k * 4 +
                         j] = self.dangle5dG[i * 4
@@ -177,7 +177,7 @@ class EnergeticsDAOE(object):
         # store for max binding at any offset
 
         if isinstance(seqs1, sc.EndArrayTD):
-            s1_end = s1[..., 0:-1]  #
+            s1_end = s1[..., 0:-1]
             s2_end_rc = s2r[..., 1:]
             s1l = np.concatenate((seqs2.rc[..., 0:1], seqs1),
                                  axis=-1).view(sc.EndArrayTD).nnseq
@@ -256,43 +256,42 @@ class EnergeticsDAOE(object):
                 ltmm = -self.ltmmdG_5335[s1_end[..., :] * 16 + s2_end_rc[..., :]]
                 rtmm = -self.rtmmdG_5335[s1_end[..., :] * 16 + s2_end_rc[..., :]]
                 intmm = -self.intmmdG_5335[s1_end[..., :] * 16 + s2_end_rc[..., :]]
-            else:  # offset < 0
-                if isinstance(seqs1, sc.EndArrayTD):
-                    ens = (s1_end[..., -offset:] == s2_end_rc[..., :offset]) * (
-                        -self.nndG[s1_end[..., -offset:]])
-                    ens[..., 0] += (ens[..., 0] != 0) * (
-                        -self.nndG[s1[..., -1]] - p.tailcordG37 +
-                        self.dangle5dG[s1[..., -1]])  # - for positive sign
-                    ens[..., -1] += (ens[..., -1] != 0) * (
-                        -self.nndG[s2[..., -1]] - p.tailcordG37 +
-                        self.dangle5dG[s2[..., -1]])  # - for positive sign
-                    ltmm = -self.ltmmdG_5335[s1_end[..., -offset:] * 16
-                                             + s2_end_rc[..., :offset]]
-                    rtmm = -self.rtmmdG_5335[s1_end[..., -offset:] * 16
-                                             + s2_end_rc[..., :offset]]
-                    intmm = -self.intmmdG_5335[s1_end[..., -offset:] * 16
-                                               + s2_end_rc[..., :offset]]
-                elif isinstance(seqs1, sc.EndArrayDT):
-                    ens = (s1_end[..., :offset] == s2_end_rc[..., -offset:]) * (
-                        -self.nndG[s1_end[..., :offset]])
-                    ens[..., 0] += (ens[..., 0] != 0) * (
-                        -self.nndG[s1[..., 0]] - p.tailcordG37 +
-                        self.dangle3dG[s1[..., 0]])  # - for positive sign
-                    ens[..., -1] += (ens[..., -1] != 0) * (
-                        -self.nndG[s2[..., 0]] - p.tailcordG37 +
-                        self.dangle3dG[s2[..., 0]])  # - for positive sign
-                    ltmm = -self.ltmmdG_5335[s1_end[..., :offset] * 16
-                                             + s2_end_rc[..., -offset:]]
-                    rtmm = -self.rtmmdG_5335[s1_end[..., :offset] * 16
-                                             + s2_end_rc[..., -offset:]]
-                    intmm = -self.intmmdG_5335[s1_end[..., :offset] * 16
-                                               + s2_end_rc[..., -offset:]]
+            elif isinstance(seqs1, sc.EndArrayTD):
+                ens = (s1_end[..., -offset:] == s2_end_rc[..., :offset]) * (
+                    -self.nndG[s1_end[..., -offset:]])
+                ens[..., 0] += (ens[..., 0] != 0) * (
+                    -self.nndG[s1[..., -1]] - p.tailcordG37 +
+                    self.dangle5dG[s1[..., -1]])  # - for positive sign
+                ens[..., -1] += (ens[..., -1] != 0) * (
+                    -self.nndG[s2[..., -1]] - p.tailcordG37 +
+                    self.dangle5dG[s2[..., -1]])  # - for positive sign
+                ltmm = -self.ltmmdG_5335[s1_end[..., -offset:] * 16
+                                         + s2_end_rc[..., :offset]]
+                rtmm = -self.rtmmdG_5335[s1_end[..., -offset:] * 16
+                                         + s2_end_rc[..., :offset]]
+                intmm = -self.intmmdG_5335[s1_end[..., -offset:] * 16
+                                           + s2_end_rc[..., :offset]]
+            elif isinstance(seqs1, sc.EndArrayDT):
+                ens = (s1_end[..., :offset] == s2_end_rc[..., -offset:]) * (
+                    -self.nndG[s1_end[..., :offset]])
+                ens[..., 0] += (ens[..., 0] != 0) * (
+                    -self.nndG[s1[..., 0]] - p.tailcordG37 +
+                    self.dangle3dG[s1[..., 0]])  # - for positive sign
+                ens[..., -1] += (ens[..., -1] != 0) * (
+                    -self.nndG[s2[..., 0]] - p.tailcordG37 +
+                    self.dangle3dG[s2[..., 0]])  # - for positive sign
+                ltmm = -self.ltmmdG_5335[s1_end[..., :offset] * 16
+                                         + s2_end_rc[..., -offset:]]
+                rtmm = -self.rtmmdG_5335[s1_end[..., :offset] * 16
+                                         + s2_end_rc[..., -offset:]]
+                intmm = -self.intmmdG_5335[s1_end[..., :offset] * 16
+                                           + s2_end_rc[..., -offset:]]
             bindmax = np.zeros(ens.shape[0:-1])
             if debug:
                 print(offset, ens.view(np.ndarray), ltmm, rtmm, intmm)
-            for e in itertools.product(*(range(0, x) for x in ens.shape[:-1])):
+            for e in itertools.product(*(range(x) for x in ens.shape[:-1])):
                 acc = 0
-                for i in range(0, ens.shape[-1]):
+                for i in range(ens.shape[-1]):
                     if ens[e+(i,)] != 0:
                         # we're matching. add the pair to the accumulator
                         acc += ens[e+(i,)]
@@ -300,8 +299,7 @@ class EnergeticsDAOE(object):
                         # we're mismatching on the right: see if right-dangling
                         # is highest binding so far, and continue, adding intmm
                         # to accumulator.
-                        if acc + rtmm[e+(i,)] > bindmax[e]:
-                            bindmax[e] = acc + rtmm[e+(i,)]
+                        bindmax[e] = max(acc + rtmm[e+(i,)], bindmax[e])
                         acc += intmm[e+(i,)]
                     elif ltmm[e+(i,)] != 0 and i < ens.shape[-1] - 1:
                         # don't do this for the last pair we're mismatching on
@@ -313,9 +311,7 @@ class EnergeticsDAOE(object):
                         # mismatch.
                         if (not self.singlepair) and (ltmm[e+(i,)] >
                                                       acc + intmm[e+(i,)]) and (
-                                                          ens[e+(i+1,)] > 0):
-                            acc = ltmm[e+(i,)]
-                        elif (self.singlepair) and (ltmm[e+(i,)] >
+                                                          ens[e+(i+1,)] > 0) or (self.singlepair) and (ltmm[e+(i,)] >
                                                     acc + intmm[e+(i,)]):
                             acc = ltmm[e+(i,)]
                         else:

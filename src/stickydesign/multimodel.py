@@ -49,7 +49,7 @@ def endchooser(all_energetics,
                 0, max(1, ceil(init_wigglefraction * len(availends))))]
             return availends[choice]
         else:
-            if not target_vals:  # NOQA
+            if not target_vals:
                 target_vals = [
                     en.matching_uniform(currentends[0:1])
                     for en in all_energetics

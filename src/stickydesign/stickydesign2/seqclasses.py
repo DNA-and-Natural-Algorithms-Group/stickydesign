@@ -11,7 +11,7 @@ _BSA_TO_SA: np.ma.MaskedArray = np.ma.masked_array(
 
 _BSA_TO_SA_ARRAYS = np.array([
     np.array([0b1 & x, 0b10 & x, 0b100 & x,
-              0b1000 & x]).nonzero()[0].astype(np.uint8) for x in range(0, 16)
+              0b1000 & x]).nonzero()[0].astype(np.uint8) for x in range(16)
 ], dtype=object)
 
 def seqconcat(s1, s2):
@@ -21,7 +21,8 @@ def seqconcat(s1, s2):
 class SeqArrayBase(np.ndarray):
     """A base class for numpy-based sequence arrays.  This doesn't assume
     anything about how the array works, and can be used with isinstance
-    to check.  Other classes should pull from this."""
+    to check.  Other classes should pull from this.
+    """
 
     def __new__(cls, array):
         if isinstance(array, np.ndarray):
@@ -58,6 +59,7 @@ class NNSeqArray(np.ndarray):
 
 class SeqArray(SeqArrayBase):
     """A SeqArray that uses typical 0,1,2,3 = a,c,g,t coding"""
+
     _nt = {'a': 0, 'c': 1, 'g': 2, 't': 3}
     _l = {v: k for k, v in _nt.items()}
 
@@ -76,7 +78,9 @@ class SeqArray(SeqArrayBase):
 
 class BoolSeqArray(SeqArrayBase):
     """A SeqArray that uses the 'bool' coding (a=0b0001, c=0b0010,
-    n=0b1111, null=0b0000 etc)"""
+    n=0b1111, null=0b0000 etc)
+    """
+
     _nt = {
         'a': 1,
         'b': 14,
@@ -137,10 +141,10 @@ class EndPairArrayDT(EndArray):
     @property
     def ends(self):
         """
-Returns
--------
-EndArrayDT
-    an array of just the ends (+ their adjacents) from the array. 
+        Returns
+        -------
+        EndArrayDT
+        an array of just the ends (+ their adjacents) from the array. 
 
         """
         return self[..., :-1].view(EndArrayDT)
@@ -150,11 +154,11 @@ EndArrayDT
     @property
     def comps(self):
         """
-Returns
--------
-EndArrayDT
-    an array of just the complementary ends (+ their adjacents) 
-    of the ends in the array.
+        Returns
+        -------
+        EndArrayDT
+        an array of just the complementary ends (+ their adjacents) 
+        of the ends in the array.
         """
         return self.rc[..., :-1].view(EndArrayDT)
 
@@ -165,10 +169,10 @@ class EndPairArrayTD(EndArray):
     @property
     def ends(self):
         """
-Returns
--------
-EndArrayDT
-    an array of just the ends (+ their adjacents) from the array. 
+        Returns
+        -------
+        EndArrayDT
+        an array of just the ends (+ their adjacents) from the array. 
 
         """
         return self[..., 1:].view(EndArrayTD)
@@ -178,11 +182,11 @@ EndArrayDT
     @property
     def comps(self):
         """
-Returns
--------
-EndArrayDT
-    an array of just the complementary ends (+ their adjacents) 
-    of the ends in the array.
+        Returns
+        -------
+        EndArrayDT
+        an array of just the complementary ends (+ their adjacents) 
+        of the ends in the array.
         """
         return self.rc[..., 1:].view(EndArrayTD)
 

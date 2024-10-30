@@ -117,7 +117,6 @@ def _multi_data_pandas(ends, all_energetics, energetics_names=None):
 
     Returns
     -------
-
     match : pandas.DataFrame
         matching energies
 
