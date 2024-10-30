@@ -22,7 +22,7 @@ testpaths = ["tests"]
 
 [project]
 name = "stickydesign"
-version = "0.9.1"
+version = "0.9.2"
 authors = [{ name = "Constantine Evans", email = "const@costi.net" }]
 description = "StickyDesign DNA Tile Sticky End Package"
 readme = "README.md"
