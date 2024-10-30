@@ -12,7 +12,7 @@ crate-type = ["cdylib"]
 rayon = ["ndarray/rayon"]
 
 [dependencies]
-ndarray = {version = "0.15", features = ["approx", "blas", "serde"]}
-numpy = {version = "0.21"}
-pyo3 = {version = "0.21", features = ["extension-module", "experimental-declarative-modules"]}
+ndarray = {version = "0.16", features = ["approx", "blas", "serde"]}
+numpy = {version = "0.22"}
+pyo3 = {version = "0.22", features = ["extension-module"]}
 
