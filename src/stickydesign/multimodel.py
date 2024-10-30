@@ -27,6 +27,7 @@ def endchooser(all_energetics,
     """
     if templates:
         templates = iter(templates)
+    rng = np.random.default_rng()
 
     def endchooser(currentends, availends, energetics):
         nonlocal target_vals, templates
@@ -45,7 +46,7 @@ def endchooser(all_energetics,
                 [en.matching_uniform(availends) for en in all_energetics],
                 axis=0)
             choices = np.argsort(dev)
-            choice = choices[np.random.randint(
+            choice = choices[rng.integers(
                 0, max(1, ceil(init_wigglefraction * len(availends))))]
             return availends[choice]
         else:
@@ -68,17 +69,17 @@ def endchooser(all_energetics,
                     np.sum(
                         np.array([
                             en.matching_uniform(availfiltered) - target_val
-                            for en, target_val in zip(all_energetics, target_vals)
+                            for en, target_val in zip(all_energetics, target_vals, strict=True)
                         ])**2,
                         axis=0))
             elif devmethod == 'max':
                 dev = np.max(np.abs(
                         np.array([
                             en.matching_uniform(availfiltered) - target_val
-                            for en, target_val in zip(all_energetics, target_vals)
+                            for en, target_val in zip(all_energetics, target_vals, strict=True)
                         ])), axis=0)
             choices = np.argsort(dev)
-            choice = choices[np.random.randint(
+            choice = choices[rng.integers(
                 0, max(1, ceil(len(choices) * next_wigglefraction)))]
             LOGGER.debug("Chose {}: {} from {}: {} / {}".format(
                 availfiltered[choice:choice+1].tolist(),
@@ -86,7 +87,7 @@ def endchooser(all_energetics,
                 len(availfiltered),
                 dev[choice],
                 np.concatenate([en.matching_uniform(availfiltered[choice:choice+1]) for en,
-                 tv in zip(all_energetics, target_vals)])))
+                 tv in zip(all_energetics, target_vals, strict=True)])))
                          
             return availfiltered[choice]
 

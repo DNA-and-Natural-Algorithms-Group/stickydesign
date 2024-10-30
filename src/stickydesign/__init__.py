@@ -1,3 +1,5 @@
+# ruff: noqa: F401, F403
+
 from .version import __version__
 
 from .endclasses import *

@@ -1,7 +1,7 @@
 import numpy as np
 import itertools
 import logging
-from typing import Optional, List, Union, cast
+from typing import Dict, Iterator, Optional, List, Tuple, Union, cast
 from typing_extensions import TypeAlias
 from collections.abc import Callable
 from collections.abc import Sequence
@@ -23,7 +23,7 @@ __all__ = [
     'endchooser_standard', 'endchooser_random'
 ]
 
-def values_chunked(items, endtype, chunk_dim=10):
+def values_chunked(items: Sequence[Sequence[int]], endtype: str, chunk_dim: int = 10) -> Iterator[EndArray]:
     """
     Given a list of lists of acceptable numbers for each position in a row of
     an array, create every possible row, and return an iterator that returns
@@ -67,7 +67,7 @@ def get_accept_set(endtype: EndTypes,
                    fdev,
                    maxendspurious,
                    spacefilter=None,
-                   adjacents=['n', 'n'],
+                   adjacents=('n', 'n'),
                    alphabet='n',
                    energetics=None):
     if not energetics:
@@ -94,16 +94,14 @@ def get_accept_set(endtype: EndTypes,
 
     # Use spacefilter to filter chunks down to usable sequences
     matcharrays = []
-    chunknum = 0
     totchunks = None
     totends = np.prod([len(x) for x in template])
     LOGGER.debug(
         "Have {} ends in total before any filtering.".format(totends))
-    for chunk in endchunk:
+    for chunknum, chunk in enumerate(endchunk, 1):
         matcharrays.append(spacefilter(chunk, energetics))
         if not totchunks:
             totchunks = totends // len(chunk)
-        chunknum += 1
         LOGGER.debug("Found {} filtered ends in chunk {} of {}.".format(
             len(matcharrays[-1]), chunknum, totchunks))
     LOGGER.debug("Done with spacefiltering.")
@@ -114,16 +112,16 @@ def get_accept_set(endtype: EndTypes,
 
 def _make_avail(endtype: EndTypes,
                 length: int,
-                spacefilter,
-                endfilter,
-                endchooser,
-                energetics,
-                adjacents=('n', 'n'),
-                num=0,
-                numtries=1,
-                oldendfilter=None,
-                oldends=[],
-                alphabet='n'):
+                spacefilter: SpaceFilterType,
+                endfilter: EndFilterType,
+                endchooser: EndChooserType,
+                energetics: Energetics,
+                adjacents: Sequence[str] = ('n', 'n'),
+                num: int=0,
+                numtries: int=1,
+                oldendfilter: Union[EndFilterType, None] = None,
+                oldends: Union[EndArray, Sequence[str], None] = None,
+                alphabet: str ='n') -> EndArray:
         # Generate the template.
     if endtype == 'DT':
         template = [lton[adjacents[0]]] + [lton[alphabet.lower()]] \
@@ -143,16 +141,14 @@ def _make_avail(endtype: EndTypes,
 
     # Use spacefilter to filter chunks down to usable sequences
     matcharrays = []
-    chunknum = 0
-    totchunks = None
+    totchunks = -1
     totends = np.prod([len(x) for x in template])
     LOGGER.debug(
         "Have {} ends in total before any filtering.".format(totends))
-    for chunk in endchunk:
+    for chunknum, chunk in enumerate(endchunk, 1):
         matcharrays.append(spacefilter(chunk, energetics))
         if not totchunks:
             totchunks = totends // len(chunk)
-        chunknum += 1
         LOGGER.debug("Found {} filtered ends in chunk {} of {}.".format(
             len(matcharrays[-1]), chunknum, totchunks))
     LOGGER.debug("Done with spacefiltering.")
@@ -161,7 +157,7 @@ def _make_avail(endtype: EndTypes,
 
     # Use endfilter to filter available sequences taking into account old
     # sequences.
-    if len(oldends) > 0:
+    if oldends is not None and len(oldends) > 0:
         if oldendfilter:
             availends = oldendfilter(oldends, None, availends, energetics)
         else:
@@ -333,12 +329,12 @@ def find_end_set_uniform(endtype: EndTypes,
 
 def enhist(endtype: EndTypes,
            length: int,
-           adjacents=('n', 'n'),
-           alphabet='n',
-           bins=None,
-           energetics=None,
-           plot=False,
-           color='b'):
+           adjacents: Sequence[str] = ('n', 'n'),
+           alphabet: str ='n',
+           bins: Optional[np.ndarray] = None,
+           energetics: Optional[Energetics] = None,
+           plot: bool = False,
+           color: str ='b') -> Tuple[np.ndarray, np.ndarray, Dict[str, float]]: 
     if endtype == 'DT':
         template = [lton[adjacents[0]]] +\
                    [lton[alphabet.lower()]] * length + [lton[wc[adjacents[1]]]]
@@ -557,16 +553,14 @@ def easy_space(endtype: EndTypes,
 
     # Use spacefilter to filter chunks down to usable sequences
     matcharrays = []
-    chunknum = 0
     totchunks = None
     totends = np.prod([len(x) for x in template])
     LOGGER.info(
         "Have {} ends in total before any filtering.".format(totends))
-    for chunk in endchunk:
+    for chunknum, chunk in enumerate(endchunk, 1):
         matcharrays.append(spacefilter(chunk, energetics))
         if not totchunks:
             totchunks = totends // len(chunk)
-        chunknum += 1
         LOGGER.debug("Found {0} filtered ends in chunk {1} of {2}.".format(
             len(matcharrays[-1]), chunknum, totchunks))
     LOGGER.debug("Done with spacefiltering.")
@@ -622,7 +616,7 @@ def endfilter_standard(maxspurious: float) -> EndFilterType:
     comp-end, comp-comp) interactions with new ends above maxspurious.
     """
 
-    def endfilter(newends: EndArray, currentends: EndArray, availends: EndArray, energetics: Energetics):
+    def endfilter(newends: EndArray, currentends: EndArray, availends: EndArray, energetics: Energetics) -> EndArray:
         endendspurious = energetics.uniform(
             np.repeat(newends.ends, len(availends), 0),
             np.tile(availends.ends, (len(newends), 1))).reshape(
@@ -655,7 +649,7 @@ def endfilter_standard_advanced(maxcompspurious: float, maxendspurious: float) -
     above maxendspurious.
     """
 
-    def endfilter(newends: EndArray, currentends: EndArray, availends: EndArray, energetics: Energetics):
+    def endfilter(newends: EndArray, currentends: EndArray, availends: EndArray, energetics: Energetics) -> EndArray:
         endendspurious = energetics.uniform(
             np.repeat(newends.ends, len(availends), 0),
             np.tile(availends.ends, (len(newends), 1))).reshape(
@@ -693,11 +687,12 @@ def energy_array_uniform(seqs: EndArray, energetics: Energetics) -> np.ndarray:
 
 def endchooser_standard(desint: float, wiggle: float = 0.0) -> EndChooserType:
     """Return a random end with end-comp energy closest to desint, subject to some wiggle."""
+    rng = np.random.default_rng()
 
-    def endchooser(currentends: EndArray, availends: EndArray, energetics: Energetics):
+    def endchooser(currentends: EndArray, availends: EndArray, energetics: Energetics) -> EndArray:
         ddiff = np.abs(energetics.matching_uniform(availends) - desint)
         choices = np.flatnonzero(ddiff <= np.amin(ddiff)+wiggle)
-        newend = availends[choices[np.random.randint(0, len(choices))]]
+        newend = availends[choices[rng.integers(0, len(choices))]]
         return newend
 
     return endchooser
@@ -705,12 +700,12 @@ def endchooser_standard(desint: float, wiggle: float = 0.0) -> EndChooserType:
 
 def endchooser_random() -> EndChooserType:
     """Return a random end with end-comp energy closest to desint."""
+    rng = np.random.default_rng()
 
-    def endchooser(currentends: EndArray, availends: EndArray, energetics: Energetics):
-        newend = availends[np.random.randint(0, len(availends))]
+    def endchooser(currentends: EndArray, availends: EndArray, energetics: Energetics) -> EndArray:
+        newend = availends[rng.integers(0, len(availends))]
         return newend
 
     return endchooser
-
 
 

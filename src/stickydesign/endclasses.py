@@ -1,8 +1,10 @@
 import numpy as np
 from typing_extensions import TypeAlias
-from typing import Union, Literal, List, cast, Dict, Any
-from collections.abc import Sequence
+from typing import Union, Literal, List, cast, Dict, Any, TYPE_CHECKING
 from abc import ABC, abstractmethod
+
+if TYPE_CHECKING:
+    from collections.abc import Sequence
 
 __all__ = [
     'Energetics',
