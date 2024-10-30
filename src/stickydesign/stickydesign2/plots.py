@@ -1,4 +1,3 @@
-import seaborn as sns
 import pandas as pd
 import xarray
 import numpy as np

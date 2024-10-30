@@ -64,7 +64,7 @@ class MultiModelChooser:
                 0, max(1, ceil(self._iwf * len(availends))))]
             return availends[choice]
         else:
-            if not self._tv:  # NOQA
+            if not self._tv:
                 self._tv = [
                     en.gse(currentends[0:1])
                     for en in self._ae

@@ -67,9 +67,7 @@ def easyends(endtype, endlength, energetics=None, number=None,
             curends = np.concatenate((curends, newend[None, :]),
                                      0).view(newend.__class__)
         availends = seqfilter.filterseqs(availends, newend[None, :])
-        if len(availends) == 0:
-            break
-        elif number and len(curends) >= number:
+        if len(availends) == 0 or number and len(curends) >= number:
             break
 
     return curends

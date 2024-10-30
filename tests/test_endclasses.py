@@ -1,7 +1,5 @@
-import pytest
 from hypothesis import given
 import hypothesis.strategies as st
-from numpy.testing import assert_array_almost_equal
 
 from stickydesign.endclasses import EndArray, PairSeqA
 

@@ -22,11 +22,11 @@ testpaths = ["tests"]
 
 [project]
 name = "stickydesign"
-version = "0.9.1"
+version = "0.9.2"
 authors = [{ name = "Constantine Evans", email = "const@costi.net" }]
 description = "StickyDesign DNA Tile Sticky End Package"
 readme = "README.md"
-dependencies = ["numpy ~= 1.20", "typing_extensions~=4.0"]
+dependencies = ["numpy >= 1.20, < 3.0", "typing_extensions~=4.0"]
 
 [project.urls]
 homepage = "https://dna.caltech.edu/StickyDesign"
@@ -63,7 +63,7 @@ indent-width = 4
 fixable = ["ALL"]
 select = ["E4", "E7", "E9", "F", "B", "A001", "A002", "C4", "ICN", "PIE", "PYI", "RSE",
     "RET501", "SIM", "TID", "TCH", "INT", "PTH", "PD", "PLR", "PLW", "TRY",
-    "NPY", "PERF", "FURB", "RUF", "UP", "D"]
+    "NPY", "PERF", "FURB", "RUF", "UP", "D", "NPY201"]
 
 # 2. Avoid enforcing line-length violations (`E501`)
 ignore = ["E501", "TRY003", "D1", "UP007", "D205", "D401", "UP032", "UP", "PLR0913", "PLR2004", "PLR0912"]

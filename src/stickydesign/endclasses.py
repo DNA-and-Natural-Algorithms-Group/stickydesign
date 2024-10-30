@@ -1,8 +1,10 @@
 import numpy as np
-from typing_extensions import TypeAlias  # noqa: UP035
-from typing import Union, Literal, List, cast, Dict, Any  # noqa: UP035
-from collections.abc import Sequence
-from abc import ABC, abstractmethod, abstractproperty
+from typing_extensions import TypeAlias
+from typing import Union, Literal, List, cast, Dict, Any, TYPE_CHECKING
+from abc import ABC, abstractmethod
+
+if TYPE_CHECKING:
+    from collections.abc import Sequence
 
 __all__ = [
     'Energetics',
@@ -17,7 +19,7 @@ __all__ = [
     'tops',
 ]
 
-EndTypes: TypeAlias = Literal['DT', 'TD', 'S']  # noqa: UP040
+EndTypes: TypeAlias = Literal['DT', 'TD', 'S']
 
 
 class PairSeqA(np.ndarray):
@@ -28,7 +30,7 @@ class PairSeqA(np.ndarray):
     def revcomp(self) -> 'PairSeqA':
         return cast(PairSeqA, 4 * (3 - (self[:, ::-1] % 4)) + 3 - (self[:, ::-1] // 4))
 
-    def tolist(self) -> List[str]:  # noqa: UP006
+    def tolist(self) -> List[str]:
         st = ["a", "c", "g", "t"]
         return [
             "".join([st[x // 4] for x in y] + [st[y[-1] % 4]]) for y in self
@@ -159,7 +161,7 @@ class EndArray(np.ndarray):
     def __repr__(self):
         return f"<endarray ({len(self)}): type {self.endtype}; {self.tolist()!r}>"
 
-    def tolist(self) -> List[str]:  # noqa: UP006
+    def tolist(self) -> List[str]:
         st = ["a", "c", "g", "t"]
         return ["".join([st[x] for x in y]) for y in self]
 

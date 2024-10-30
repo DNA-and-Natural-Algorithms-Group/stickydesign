@@ -14,7 +14,7 @@ except ImportError:
 
 def py_tightloop(ens, ltmm, rtmm, intmm, singlepair, looppenalty):
     bindmax = np.zeros(ens.shape[0])
-    for e in range(0, ens.shape[0]):
+    for e in range(ens.shape[0]):
         acc = 0
         for i in range(ens.shape[1]):
             if ens[e, i] != 0:
@@ -27,8 +27,7 @@ def py_tightloop(ens, ltmm, rtmm, intmm, singlepair, looppenalty):
                 # Update: we only want to do this if the last
                 # nnpair was bound, because otherwise, we
                 # can't have a "right" mismatch.
-                if acc + rtmm[e, i] > bindmax[e]:
-                    bindmax[e] = acc + rtmm[e, i]
+                bindmax[e] = max(acc + rtmm[e, i], bindmax[e])
                 acc += intmm[e, i]
             elif ltmm[e, i] != 0 and i < ens.shape[1] - 1:
                 # don't do this for the last pair we're mismatching on
@@ -40,9 +39,7 @@ def py_tightloop(ens, ltmm, rtmm, intmm, singlepair, looppenalty):
                 # mismatch.
                 if (not singlepair) and (ltmm[e, i] >
                                                 acc + intmm[e, i]) and (
-                                                    ens[e, i + 1] > 0):
-                    acc = ltmm[e, i]
-                elif (singlepair) and (ltmm[e, i] >
+                                                    ens[e, i + 1] > 0) or (singlepair) and (ltmm[e, i] >
                                             acc + intmm[e, i]):
                     acc = ltmm[e, i]
                 else:
@@ -54,22 +51,21 @@ def py_tightloop(ens, ltmm, rtmm, intmm, singlepair, looppenalty):
 
 
 class EnergeticsBasic(Energetics):
-
     """Energy functions based on several sources, primarily SantaLucia's
-       2004 paper.  This class uses the same parameters and algorithms
-       as EnergeticsDAOE, bet does not make DX-specific assumptions.
-       Instead, it assumes that each energy should simply be that of
-       two single strands attaching/detaching, without consideration
-       of nicks, stacking, or other effects related to the
-       beginning/end of each sequence.  Dangles and tails are still
-       included in mismatched binding calculations when appropriate.
+    2004 paper.  This class uses the same parameters and algorithms
+    as EnergeticsDAOE, bet does not make DX-specific assumptions.
+    Instead, it assumes that each energy should simply be that of
+    two single strands attaching/detaching, without consideration
+    of nicks, stacking, or other effects related to the
+    beginning/end of each sequence.  Dangles and tails are still
+    included in mismatched binding calculations when appropriate.
 
-       Relevant arguments:
+    Relevant arguments:
        
-       singlepair (bool, default False) --- treat single base pair pairings
-       as possible.
-       temperature (float in degrees Celsius, default 37) --- temperature
-       to use for the model, in C.
+    singlepair (bool, default False) --- treat single base pair pairings
+    as possible.
+    temperature (float in degrees Celsius, default 37) --- temperature
+    to use for the model, in C.
     """
     
     def __init__(self,
@@ -98,7 +94,7 @@ class EnergeticsBasic(Energetics):
         self._accel = _accel
         self._allow_shifts = _allow_shifts
     @property
-    def info(self) -> Dict[str, Any]:  # noqa: F821
+    def info(self) -> Dict[str, Any]:
         info = {'enclass': 'EnergeticsDAOE',
                 'temperature': self.temperature,
                 'coaxparams': self.coaxparaminfo,
@@ -158,9 +154,9 @@ class EnergeticsBasic(Energetics):
         self.intmmdG_5335 = np.zeros(256)
 
         # Dumb setup. FIXME: do this cleverly
-        for i in range(0, 4):
-            for j in range(0, 4):
-                for k in range(0, 4):
+        for i in range(4):
+            for j in range(4):
+                for k in range(4):
                     self.ltmmdG_5335[
                         i * 64 + j * 16 + k * 4 +
                         j] = self.dangle5dG[i * 4

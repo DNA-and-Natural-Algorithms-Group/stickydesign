@@ -6,20 +6,20 @@ from . import newparams as p
 
 class EnergeticsBasic(object):
     """Energy functions based on several sources, primarily SantaLucia's
-       2004 paper.  This class uses the same parameters and algorithms
-       as EnergeticsDAOE, bet does not make DX-specific assumptions.
-       Instead, it assumes that each energy should simply be that of
-       two single strands attaching/detaching, without consideration
-       of nicks, stacking, or other effects related to the
-       beginning/end of each sequence.  Dangles and tails are still
-       included in mismatched binding calculations when appropriate.
+    2004 paper.  This class uses the same parameters and algorithms
+    as EnergeticsDAOE, bet does not make DX-specific assumptions.
+    Instead, it assumes that each energy should simply be that of
+    two single strands attaching/detaching, without consideration
+    of nicks, stacking, or other effects related to the
+    beginning/end of each sequence.  Dangles and tails are still
+    included in mismatched binding calculations when appropriate.
 
-       Relevant arguments:
+    Relevant arguments:
        
-       singlepair (bool, default False) --- treat single base pair pairings
-       as possible.
-       temperature (float in degrees Celsius, default 37) --- temperature
-       to use for the model, in C.
+    singlepair (bool, default False) --- treat single base pair pairings
+    as possible.
+    temperature (float in degrees Celsius, default 37) --- temperature
+    to use for the model, in C.
     """
 
     def __init__(self,
@@ -97,9 +97,9 @@ class EnergeticsBasic(object):
         self.intmmdG_5335 = np.zeros(256)
 
         # Dumb setup. FIXME: do this cleverly
-        for i in range(0, 4):
-            for j in range(0, 4):
-                for k in range(0, 4):
+        for i in range(4):
+            for j in range(4):
+                for k in range(4):
                     self.ltmmdG_5335[
                         i * 64 + j * 16 + k * 4 +
                         j] = self.dangle5dG[i * 4
@@ -184,7 +184,7 @@ class EnergeticsBasic(object):
                 print(offset, ens.view(np.ndarray), ltmm, rtmm, intmm)
             for endi in np.ndindex(ens.shape[:-1]):
                 acc = 0
-                for i in range(0, ens.shape[-1]):
+                for i in range(ens.shape[-1]):
                     if ens[endi][i] != 0:
                         # we're matching. add the pair to the accumulator
                         acc += ens[endi][i]
@@ -195,8 +195,7 @@ class EnergeticsBasic(object):
                         # Update: we only want to do this if the last
                         # nnpair was bound, because otherwise, we
                         # can't have a "right" mismatch.
-                        if acc + rtmm[endi][i] > bindmax[endi]:
-                            bindmax[endi] = acc + rtmm[endi][i]
+                        bindmax[endi] = max(acc + rtmm[endi][i], bindmax[endi])
                         acc += intmm[endi][i]
                     elif ltmm[endi][i] != 0 and i < ens.shape[-1] - 1:
                         # don't do this for the last pair we're mismatching on
@@ -208,9 +207,7 @@ class EnergeticsBasic(object):
                         # mismatch.
                         if (not self.singlepair) and (
                                 ltmm[endi][i] > acc + intmm[endi][i]) and (
-                                    ens[endi][i + 1] > 0):
-                            acc = ltmm[endi][i]
-                        elif (self.singlepair) and (ltmm[endi][i] >
+                                    ens[endi][i + 1] > 0) or (self.singlepair) and (ltmm[endi][i] >
                                                     acc + intmm[endi][i]):
                             acc = ltmm[endi][i]
                         else:

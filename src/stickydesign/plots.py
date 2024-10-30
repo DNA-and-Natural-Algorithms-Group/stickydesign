@@ -4,11 +4,11 @@ import numpy as np
 from .stickydesign import energy_array_uniform
 
 def _import_pyplot():
-    global plt
+    global plt # noqa: PLW0603
     try:
         from matplotlib import pyplot as plt
-    except ImportError:
-        raise ImportError("matplotlib is required for plotting functions")
+    except ImportError as e:
+        raise ImportError("matplotlib is required for plotting functions") from e
 
 def hist_multi(all_ends,
                all_energetics,
@@ -117,7 +117,6 @@ def _multi_data_pandas(ends, all_energetics, energetics_names=None):
 
     Returns
     -------
-
     match : pandas.DataFrame
         matching energies
 
@@ -126,8 +125,8 @@ def _multi_data_pandas(ends, all_energetics, energetics_names=None):
     """
     try:
         import pandas as pd
-    except ImportError:
-        raise ImportError("pandas is required for _multi_data_pandas")
+    except ImportError as e:
+        raise ImportError("pandas is required for _multi_data_pandas") from e
     match = np.array([np.concatenate(
         [e.matching_uniform(x) for x in ends]) for e in all_energetics]).T
     match = pd.DataFrame(match, columns=energetics_names)

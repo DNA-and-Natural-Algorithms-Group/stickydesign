@@ -1,6 +1,4 @@
-import pytest
 import stickydesign as sd
-import numpy.testing as npt
 import numpy as np
 
 def test_easyends_gen_s():

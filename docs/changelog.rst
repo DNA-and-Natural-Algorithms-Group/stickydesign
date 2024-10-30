@@ -1,6 +1,12 @@
 Changelog
 ==========
 
+0.9.2
+-----
+
+* Update versions to support Numpy 2.
+* Numerous linting and typing fixes.
+
 0.9.1
 -----
 
